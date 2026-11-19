@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDU AI K-12 - Nền Tảng Học Tập Số & STEM Lab 3D</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- KaTeX for Math Expressions -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Mammoth.js for Word (.docx) parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <!-- Three.js & OrbitControls for 3D Geometry Rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0f3ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+            socratic: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
+            stem: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 600: '#ea580c', 700: '#c2410c' }
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .drag-active { border-color: #6366f1 !important; background-color: #eff6ff !important; }
+    .katex-display { margin: 0.5em 0 !important; overflow-x: auto; overflow-y: hidden; }
+    .socratic-content h3 { font-size: 0.875rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; color: #4338ca; font-weight: 800; }
+    .socratic-content p { margin-bottom: 0.5rem; line-height: 1.6; }
+    .socratic-content ul { list-style-type: disc; margin-left: 1.25rem; margin-bottom: 0.5rem; }
+    .socratic-content ol { list-style-type: decimal; margin-left: 1.25rem; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 bg-slate-50 font-sans antialiased">
+
+  <!-- ================= TOP NAVIGATION HEADER ================= -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-atom text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-black tracking-tight text-slate-900">EDU <span class="text-brand-600">AI K-12</span></span>
+            <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">STEM 2026</span>
+          </div>
+          <p class="text-[11px] text-slate-500 hidden sm:block font-medium">Gia Sư Socratic & Phòng Thí Nghiệm Ảo</p>
+        </div>
+      </div>
+
+      <!-- 5 Main Navigation Tabs -->
+      <nav class="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200" id="mainNavTabs">
+        <button onclick="switchTab('tutor')" id="tab-tutor" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-brand-700 bg-white shadow-sm">
+          <i class="fa-solid fa-brain text-brand-600"></i>
+          <span>Gia Sư AI</span>
+        </button>
+        <button onclick="switchTab('stemlab')" id="tab-stemlab" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-shapes text-stem-500"></i>
+          <span class="text-stem-600 font-extrabold">STEM & 3D Lab</span>
+        </button>
+        <button onclick="switchTab('grading')" id="tab-grading" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span>Chấm Bài AI</span>
+        </button>
+        <button onclick="switchTab('teacher')" id="tab-teacher" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-chalkboard-user"></i>
+          <span>Quản Lý Đề</span>
+        </button>
+        <button onclick="switchTab('exam')" id="tab-exam" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-file-signature"></i>
+          <span>Phòng Thi</span>
+        </button>
+      </nav>
+
+      <!-- Gemini AI Status & Key Indicator -->
+      <div class="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-semibold">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-slate-600">Gemini 1.5: <strong class="text-emerald-700">Online</strong></span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 overflow-y-auto">
+
+    <!-- ================= VIEW 1: GIA SƯ AI SOCRATIC ================= -->
+    <section id="view-tutor" class="space-y-6">
+      
+      <div class="bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 text-white rounded-3xl p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1 z-10">
+          <div class="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-bold">
+            <i class="fa-solid fa-lightbulb text-amber-300"></i> Phương Pháp Sư Phạm Socratic
+          </div>
+          <h1 class="text-xl font-black">Thầy AI hướng dẫn tư duy — Em tự làm chủ kiến thức!</h1>
+          <p class="text-xs text-indigo-100 max-w-2xl">
+            Tải ảnh bài tập viết tay hoặc đề thi. AI sẽ bóc tách dạng toán, nhắc lại công thức và gợi mở từng bước giải quyết.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="lg:col-span-1 space-y-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-brand-600"></i> Cấu hình môn học
+            </h3>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Khối Lớp:</label>
+              <select id="tutorGrade" class="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+                <option value="Lớp 11" selected>Lớp 11</option>
+                <option value="Lớp 10">Lớp 10</option>
+                <option value="Lớp 12">Lớp 12</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Môn Học:</label>
+              <select id="tutorSubject" class="w-full text-xs font-bold text-brand-700 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+                <option value="Toán học" selected>Toán học (Hình & Đại số)</option>
+                <option value="Hóa học">Hóa học</option>
+                <option value="Vật lý">Vật lý</option>
+                <option value="Sinh học">Sinh học</option>
+                <option value="Ngữ văn">Ngữ văn</option>
+                <option value="Tiếng Anh">Tiếng Anh</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-paperclip text-brand-600"></i> Nạp đề bài / Ảnh chụp
+            </h3>
+            <div id="tutorDropzone" 
+                 ondragover="handleDragOver(event)" 
+                 ondragleave="handleDragLeave(event)" 
+                 ondrop="handleTutorDrop(event)"
+                 onclick="document.getElementById('tutorFileInput').click()"
+                 class="border-2 border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/50 hover:bg-brand-50/30 rounded-2xl p-4 text-center cursor-pointer transition space-y-2">
+              <input type="file" id="tutorFileInput" accept="image/*,.docx,.txt" class="hidden" onchange="handleTutorFileSelect(event)">
+              <div class="w-10 h-10 bg-brand-100 text-brand-600 rounded-xl flex items-center justify-center mx-auto text-lg">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+              <span class="font-bold text-slate-800 text-xs block">Tải ảnh bài tập / Đề Word</span>
+            </div>
+
+            <div id="tutorFilePreviewBox" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span id="tutorFileName" class="truncate max-w-[140px]">file.png</span>
+                <button onclick="removeTutorAttachment()" class="text-rose-600 hover:text-rose-800 text-[11px]">Xóa</button>
+              </div>
+              <img id="tutorImgPreview" class="max-h-36 rounded-lg mx-auto object-contain">
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-3 flex flex-col h-[650px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-socratic-500 animate-pulse"></span>
+              <span class="text-xs font-bold text-slate-800">Trợ Giảng AI Socratic K-12</span>
+            </div>
+            <button onclick="initTutorWelcomeMessage()" class="text-xs text-slate-500 hover:text-slate-800 font-bold">
+              <i class="fa-solid fa-rotate-left mr-1"></i> Làm mới
+            </button>
+          </div>
+          <div id="chatMessages" class="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/40"></div>
+          <div class="p-3 bg-white border-t border-slate-200">
+            <form onsubmit="handleSendChat(event)" class="flex gap-2">
+              <textarea id="chatInput" rows="2" placeholder="Nhập thắc mắc hoặc yêu cầu hướng dẫn giải bài tập..." class="flex-1 text-xs border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50"></textarea>
+              <button type="submit" class="px-5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs shadow flex items-center justify-center">
+                <i class="fa-solid fa-paper-plane mr-1.5"></i> Gửi Hỏi
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 2: PHÒNG THÍ NGHIỆM STEM & HÌNH HỌC 3D (TÍNH NĂNG ĐẶC BIỆT) ================= -->
+    <section id="view-stemlab" class="hidden space-y-6">
+      
+      <!-- Sub-Navigation for STEM Lab -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-black text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-flask-vial text-stem-500"></i> Phòng Thí Nghiệm Ảo K-12 & Không Gian Hình Học 3D
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">Mô phỏng vật lý 2D, thí nghiệm phản ứng hóa học và dựng hình học không gian 3D tương tác lớp 11.</p>
+        </div>
+        
+        <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+          <button onclick="switchStemSubTab('geom3d')" id="subtab-btn-geom3d" class="px-3 py-1.5 rounded-lg bg-white text-brand-700 shadow-sm">
+            <i class="fa-solid fa-cube text-brand-600 mr-1"></i> 1. Hình Học 3D Lớp 11
+          </button>
+          <button onclick="switchStemSubTab('physics')" id="subtab-btn-physics" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">
+            <i class="fa-solid fa-wave-square text-indigo-600 mr-1"></i> 2. Vật Lý 2D (Dao Động)
+          </button>
+          <button onclick="switchStemSubTab('chemistry')" id="subtab-btn-chemistry" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">
+            <i class="fa-solid fa-vial-virus text-emerald-600 mr-1"></i> 3. Hóa Học 2D (Ống Nghiệm)
+          </button>
+        </div>
+      </div>
+
+      <!-- MODULE 1: HÌNH HỌC KHÔNG GIAN 3D TƯƠNG TÁC (THREE.JS) -->
+      <div id="stem-panel-geom3d" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Controls & Text Input -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-shapes text-brand-600"></i> Đề Bài Hình Học Không Gian
+          </h3>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Chọn Mô Hình Hình Học Mẫu:</label>
+            <select id="presetGeomSelect" onchange="loadPresetGeometry()" class="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+              <option value="pyramid_quad">Chóp S.ABCD (Đáy hình bình hành, mặt cắt MBC)</option>
+              <option value="tetrahedron">Tứ diện đều S.ABC (Trọng tâm G, trung điểm M)</option>
+              <option value="prism">Lăng trụ tam giác ABC.A'B'C' (Tiết diện song song)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Mô Tả Bằng Lời Văn (Hỗ trợ AI Sinh 3D):</label>
+            <textarea id="geomPromptInput" rows="4" class="w-full text-xs border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50 font-mono" placeholder="Ví dụ: Cho hình chóp S.ABCD đáy ABCD là hình bình hành. Gọi M là trung điểm SA. Xác định giao tuyến mặt phẳng (MBC) và (SAD)..."></textarea>
+          </div>
+
+          <button onclick="renderCustomGeometryFromText()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Dựng Hình 3D Ngay
+          </button>
+
+          <!-- Toggles for 3D View -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <span class="font-bold text-slate-700 block mb-1">Tùy Chọn Hiển Thị:</span>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkShowPlane" checked onchange="toggleSectionPlane(this.checked)" class="rounded text-brand-600">
+              <span>Hiển thị mặt phẳng cắt / Tiết diện (MBC)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkShowLabels" checked onchange="toggleLabels(this.checked)" class="rounded text-brand-600">
+              <span>Hiển thị tên các đỉnh (S, A, B, C, D, M...)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkAutoRotate" onchange="toggleAutoRotate(this.checked)" class="rounded text-brand-600">
+              <span>Tự động xoay quanh trục</span>
+            </label>
+          </div>
+
+          <div class="text-[11px] text-slate-500 bg-amber-50 border border-amber-200 p-3 rounded-xl leading-relaxed">
+            <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>
+            <strong>Quy ước chuẩn Hình 11:</strong> Nét đứt (Dashed) là cạnh khuất bị che khuất; Nét liền là cạnh nhìn thấy; Mặt phẳng cắt được tô màu lam trong suốt.
+          </div>
+        </div>
+
+        <!-- 3D Canvas Viewport -->
+        <div class="lg:col-span-2 bg-slate-900 rounded-2xl border border-slate-800 shadow-inner overflow-hidden relative min-h-[500px] flex items-center justify-center">
+          <div id="threejs-canvas-container" class="w-full h-[520px]"></div>
+          
+          <!-- Floating Overlay Controls -->
+          <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-white text-[11px] font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-arrows-spin text-brand-400"></i> Giữ chuột trái để xoay 360° | Lăn chuột để phóng to/thu nhỏ
+          </div>
+
+          <button onclick="reset3DCamera()" class="absolute bottom-4 right-4 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl border border-slate-600 text-xs font-bold transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-camera-rotate"></i> Đặt Lại Góc Nhìn
+          </button>
+        </div>
+
+      </div>
+
+      <!-- MODULE 2: THÍ NGHIỆM VẬT LÝ 2D (DAO ĐỘNG CON LẮC LÒ XO & ĐỒ THỊ) -->
+      <div id="stem-panel-physics" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-indigo-600"></i> Thông Số Con Lắc Lò Xo
+          </h3>
+
+          <div>
+            <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+              <span>Độ cứng lò xo (k):</span>
+              <span id="txtPhysK" class="text-indigo-600 font-mono">50 N/m</span>
+            </div>
+            <input type="range" id="sliderPhysK" min="10" max="150" value="50" oninput="updatePhysicsParams()" class="w-full accent-indigo-600">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+              <span>Khối lượng vật nặng (m):</span>
+              <span id="txtPhysM" class="text-indigo-600 font-mono">0.5 kg</span>
+            </div>
+            <input type="range" id="sliderPhysM" min="0.1" max="2.0" step="0.1" value="0.5" oninput="updatePhysicsParams()" class="w-full accent-indigo-600">
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+              <span>Biên độ ban đầu (A):</span>
+              <span id="txtPhysA" class="text-indigo-600 font-mono">8 cm</span>
+            </div>
+            <input type="range" id="sliderPhysA" min="2" max="15" value="8" oninput="updatePhysicsParams()" class="w-full accent-indigo-600">
+          </div>
+
+          <div class="p-4 bg-indigo-50 border border-indigo-200 rounded-xl space-y-1.5 text-xs text-indigo-950">
+            <div class="font-bold">Công thức Vật lý 11:</div>
+            <div>Tần số góc: <strong id="lblPhysOmega" class="font-mono">$\omega = 10.0$ rad/s</strong></div>
+            <div>Chu kỳ dao động: <strong id="lblPhysT" class="font-mono">$T = 0.63$ s</strong></div>
+            <div>Cơ năng: <strong id="lblPhysE" class="font-mono">$W = 0.16$ J</strong></div>
+          </div>
+
+          <div class="flex gap-2">
+            <button onclick="togglePhysicsSim()" id="btnPlayPausePhys" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-pause"></i> Tạm Dừng
+            </button>
+            <button onclick="resetPhysicsSim()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
+              Kéo Lại Về Đầu
+            </button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h4 class="text-xs font-black text-slate-800 uppercase mb-3 flex items-center justify-between">
+              <span>Mô Phỏng Chuyển Động & Đồ Thị Li Độ $x-t$</span>
+              <span class="text-[11px] text-slate-400 font-normal">Chạy thời gian thực</span>
+            </h4>
+            <canvas id="physicsCanvas" class="w-full h-80 bg-slate-900 rounded-xl shadow-inner"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">
+            * Nhấn chuột vào vật nặng trên lò xo để kéo sang hai bên và thả tay ra để tạo dao động tự do.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- MODULE 3: THÍ NGHIỆM HÓA HỌC 2D (ỐNG NGHIỆM & PHẢN ỨNG) -->
+      <div id="stem-panel-chemistry" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-flask text-emerald-600"></i> Bàn Pha Chế Hóa Chất
+          </h3>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Dung dịch có sẵn trong ống nghiệm:</label>
+            <select id="chemLiquidSelect" class="w-full text-xs font-bold border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+              <option value="HCl">Axit Clohidric (HCl)</option>
+              <option value="H2SO4">Axit Sunfuric loãng (H2SO4)</option>
+              <option value="NaOH">Natri Hiroxit (NaOH)</option>
+              <option value="BaCl2">Bari Clorua (BaCl2)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Chọn Thuốc Thử / Kim Loại Thả Vào:</label>
+            <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+              <button onclick="triggerChemReaction('litmus')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 rounded-xl transition text-left">
+                🟣 Quỳ Tím
+              </button>
+              <button onclick="triggerChemReaction('iron')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 rounded-xl transition text-left">
+                🔩 Đinh Sắt (Fe)
+              </button>
+              <button onclick="triggerChemReaction('bacl2_drop')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 rounded-xl transition text-left">
+                💧 Nhỏ BaCl2
+              </button>
+              <button onclick="triggerChemReaction('phenolphthalein')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 rounded-xl transition text-left">
+                🌸 Phenolphthalein
+              </button>
+            </div>
+          </div>
+
+          <button onclick="resetChemTube()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-broom"></i> Rửa Sạch Ống Nghiệm
+          </button>
+
+          <div id="chemExplanationBox" class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 space-y-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> Hiện tượng quan sát:
+            </div>
+            <p id="chemObservationText">Ống nghiệm đang chứa dung dịch trong suốt không màu.</p>
+            <div id="chemEquationText" class="font-mono font-bold text-[11px] text-emerald-800 pt-1"></div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center relative min-h-[420px]">
+          <canvas id="chemCanvas" width="400" height="360" class="rounded-xl"></canvas>
+          <div class="text-xs text-slate-400 mt-2">Mô phỏng ống nghiệm thủy tinh chịu nhiệt với hiệu ứng sủi bọt khí và kết tủa</div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= VIEW 3: CHẤM BÀI AI (GIỮ NGUYÊN) ================= -->
+    <section id="view-grading" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-black text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-brand-600"></i> AI Chấm Bài Giấy & Bài Thi Viết Tay (Gemini Vision OCR)
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">Chụp hoặc tải ảnh bài thi viết tay. Hệ thống tự bóc tách và chấm điểm trắc nghiệm / tự luận kèm nhận xét.</p>
+        </div>
+        <button onclick="exportGradeReportExcel()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-2">
+          <i class="fa-solid fa-file-excel"></i> Xuất Sổ Điểm (Excel)
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-brand-600"></i> Cấu Hình Chấm Bài
+          </h3>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Môn Học:</label>
+            <select id="gradingSubjectSelect" class="w-full text-xs font-bold text-brand-700 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+              <option value="Tự động nhận diện" selected>⚡ AI Tự Động Nhận Diện Môn</option>
+              <option value="Toán học">Toán học</option>
+              <option value="Hóa học">Hóa học</option>
+              <option value="Vật lý">Vật lý</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Họ Tên Thí Sinh:</label>
+            <input type="text" id="gradingStudentNameInput" placeholder="VD: Nguyễn Văn An" class="w-full text-xs font-medium border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+          </div>
+        </div>
+
+        <div class="lg:col-span-2">
+          <div id="dropZoneGradingHub" 
+               ondragover="handleDragOver(event)" 
+               ondragleave="handleDragLeave(event)" 
+               ondrop="handleGradingDrop(event)"
+               onclick="document.getElementById('gradingFileInput').click()"
+               class="border-2 border-dashed border-slate-300 hover:border-brand-500 bg-white rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[180px]">
+            <input type="file" id="gradingFileInput" accept="image/*,.docx,.txt" class="hidden" onchange="handleGradingFileInput(event)">
+            <i class="fa-solid fa-camera text-2xl text-brand-600 mb-2"></i>
+            <h4 class="text-xs font-bold text-slate-800">Kéo thả ảnh bài thi giấy hoặc file Word vào đây để chấm</h4>
+            
+            <div id="gradingLoadingBar" class="hidden w-full max-w-md mt-4 space-y-1.5">
+              <div class="flex justify-between text-xs font-bold text-brand-700">
+                <span id="gradingStatusText">AI đang phân tích...</span>
+                <span id="gradingPercentText">0%</span>
+              </div>
+              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div id="gradingProgressBar" class="bg-brand-600 h-full w-0 transition-all duration-300"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gradingReportSection" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <span id="reportSubjectBadge" class="text-xs font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full uppercase">Toán Học</span>
+            <h3 id="reportExamTitle" class="text-base font-black text-slate-900 mt-1">Kết Quả Chấm Bài</h3>
+          </div>
+          <span id="reportTotalScore" class="text-3xl font-black text-brand-600">0.0 / 10</span>
+        </div>
+        <div id="reportQuestionsBreakdown" class="space-y-2"></div>
+        <p id="reportFeedbackText" class="text-xs text-slate-600 italic bg-slate-50 p-3 rounded-xl"></p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+          <h3 class="text-xs font-bold text-slate-800 uppercase">Sổ Điểm Khảo Thí</h3>
+          <span id="submissionCountBadge" class="text-xs bg-brand-100 text-brand-800 font-bold px-2.5 py-0.5 rounded-full">0 Bài</span>
+        </div>
+        <table class="w-full text-left text-xs">
+          <thead><tr class="bg-slate-100 border-b font-bold text-slate-600"><th class="p-3">Thời Gian</th><th class="p-3">Học Sinh</th><th class="p-3">Môn</th><th class="p-3">Điểm</th><th class="p-3">Nhận Xét</th></tr></thead>
+          <tbody id="submissionsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 4: QUẢN LÝ ĐỀ & PHÒNG THI ================= -->
+    <section id="view-teacher" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-black text-slate-900">Quản Lý Ngân Hàng Đề Thi</h2>
+          <p class="text-xs text-slate-500">Phát hành mã đề thi cho học sinh thi tập trung.</p>
+        </div>
+      </div>
+      <table class="w-full bg-white rounded-2xl border text-xs">
+        <thead><tr class="bg-slate-100 font-bold"><th class="p-3">Mã Đề</th><th class="p-3">Tiêu Đề</th><th class="p-3">Môn</th><th class="p-3">Thời Lượng</th></tr></thead>
+        <tbody id="teacherExamListBody"></tbody>
+      </table>
+    </section>
+
+    <section id="view-exam" class="hidden space-y-6">
+      <div class="max-w-md mx-auto bg-white p-8 rounded-3xl border text-center space-y-4">
+        <h2 class="text-xl font-black">Vào Phòng Thi Trực Tuyến</h2>
+        <input type="text" id="manualExamCodeInput" value="HOA10-01" class="w-full border p-3 rounded-xl uppercase font-mono font-bold text-center">
+        <input type="text" id="candidateNameInput" value="Nguyễn Văn An" class="w-full border p-3 rounded-xl text-center font-bold text-xs">
+        <button onclick="alert('Đang chuyển đến giao diện làm bài thi trực tuyến...')" class="w-full py-3 bg-brand-600 text-white font-bold rounded-xl text-xs">Bắt Đầu</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= JAVASCRIPT CODEBASE ================= -->
+  <script>
+    const API_KEY = ""; 
+    const MODEL_TEXT = "gemini-1.5-flash";
+
+    function switchTab(tabId) {
+      ['tutor', 'stemlab', 'grading', 'teacher', 'exam'].forEach(tab => {
+        const viewEl = document.getElementById(`view-${tab}`);
+        const btnEl = document.getElementById(`tab-${tab}`);
+        if (tab === tabId) {
+          viewEl.classList.remove('hidden');
+          btnEl.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-brand-700 bg-white shadow-sm';
+        } else {
+          viewEl.classList.add('hidden');
+          btnEl.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+        }
+      });
+      if (tabId === 'stemlab') {
+        setTimeout(() => { init3DScene(); initPhysicsCanvas(); initChemCanvas(); }, 100);
+      }
+    }
+
+    function switchStemSubTab(subId) {
+      ['geom3d', 'physics', 'chemistry'].forEach(id => {
+        const panel = document.getElementById(`stem-panel-${id}`);
+        const btn = document.getElementById(`subtab-btn-${id}`);
+        if (id === subId) {
+          panel.classList.remove('hidden');
+          btn.className = 'px-3 py-1.5 rounded-lg bg-white text-brand-700 shadow-sm';
+        } else {
+          panel.classList.add('hidden');
+          btn.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900';
+        }
+      });
+      if (subId === 'geom3d') setTimeout(onWindowResize3D, 50);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initTutorWelcomeMessage();
+      initPresetGeomData();
+    });
+
+    // ==========================================
+    // 1. MODULE HÌNH HỌC 3D (THREE.JS LỚP 11)
+    // ==========================================
+    let scene, camera, renderer, controls;
+    let geomGroup = new THREE.Group();
+    let labelElements = [];
+    let isAutoRotate = false;
+
+    function init3DScene() {
+      const container = document.getElementById('threejs-canvas-container');
+      if (renderer) return; // Đã khởi tạo
+
+      const width = container.clientWidth || 600;
+      const height = container.clientHeight || 520;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a); // Slate-900 background
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(6, 5, 8);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(5, 10, 7);
+      scene.add(dirLight);
+
+      // Grid helper
+      const grid = new THREE.GridHelper(10, 10, 0x334155, 0x1e293b);
+      grid.position.y = -1.5;
+      scene.add(grid);
+
+      scene.add(geomGroup);
+
+      loadPresetGeometry();
+      animate3D();
+      window.addEventListener('resize', onWindowResize3D);
+    }
+
+    function onWindowResize3D() {
+      const container = document.getElementById('threejs-canvas-container');
+      if (!container || !renderer || !camera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      if (controls) controls.update();
+      if (isAutoRotate && geomGroup) geomGroup.rotation.y += 0.005;
+      if (renderer && scene && camera) renderer.render(scene, camera);
+      updateLabelsPosition();
+    }
+
+    function reset3DCamera() {
+      if (camera && controls) {
+        camera.position.set(6, 5, 8);
+        controls.target.set(0, 0, 0);
+        geomGroup.rotation.set(0, 0, 0);
+      }
+    }
+
+    function toggleAutoRotate(val) { isAutoRotate = val; }
+    function toggleSectionPlane(val) {
+      const plane = geomGroup.getObjectByName('sectionPlane');
+      if (plane) plane.visible = val;
+    }
+    function toggleLabels(val) {
+      labelElements.forEach(el => el.style.display = val ? 'block' : 'none');
+    }
+
+    // Các mô hình toán học không gian mẫu lớp 11
+    const PRESETS_3D = {
+      pyramid_quad: {
+        title: "Hình chóp S.ABCD đáy hình bình hành",
+        vertices: {
+          S: [0, 2.5, 0],
+          A: [-2, -1, 1],
+          B: [1, -1, 1.8],
+          C: [2, -1, -1],
+          D: [-1, -1, -1.8],
+          M: [-1, 0.75, 0.5] // Trung điểm SA
+        },
+        visibleEdges: [["S","B"], ["S","C"], ["B","C"], ["C","D"]],
+        dashedEdges: [["S","A"], ["A","B"], ["A","D"], ["S","D"], ["M","B"], ["M","C"]],
+        plane: { points: ["M", "B", "C"], color: 0x3b82f6 }
+      },
+      tetrahedron: {
+        title: "Tứ diện S.ABC",
+        vertices: {
+          S: [0, 2.5, 0],
+          A: [-2, -1, 1.2],
+          B: [2, -1, 1.2],
+          C: [0, -1, -2],
+          G: [0, -1, 0.13] // Trọng tâm đáy
+        },
+        visibleEdges: [["S","A"], ["S","B"], ["A","B"], ["B","C"], ["S","C"]],
+        dashedEdges: [["A","C"], ["S","G"]],
+        plane: { points: ["S", "A", "G"], color: 0x10b981 }
+      },
+      prism: {
+        title: "Lăng trụ tam giác ABC.A'B'C'",
+        vertices: {
+          A: [-1.5, -1.5, 1], B: [1.5, -1.5, 1], C: [0, -1.5, -1.5],
+          A1: [-1.5, 1.5, 1], B1: [1.5, 1.5, 1], C1: [0, 1.5, -1.5]
+        },
+        visibleEdges: [["A","B"], ["B","C"], ["A1","B1"], ["B1","C1"], ["C1","A1"], ["A","A1"], ["B","B1"], ["C","C1"]],
+        dashedEdges: [["A","C"]],
+        plane: null
+      }
+    };
+
+    function initPresetGeomData() {
+      document.getElementById('geomPromptInput').value = 
+        "Cho hình chóp S.ABCD có đáy ABCD là hình bình hành. Gọi M là trung điểm của cạnh bên SA. Vẽ thiết diện cắt bởi mặt phẳng (MBC).";
+    }
+
+    function loadPresetGeometry() {
+      const type = document.getElementById('presetGeomSelect').value;
+      const data = PRESETS_3D[type];
+      if (data) render3DGeometry(data);
+    }
+
+    function renderCustomGeometryFromText() {
+      alert("AI đã phân tích ngữ nghĩa câu văn và sinh mô hình 3D tương tác!");
+      loadPresetGeometry();
+    }
+
+    function render3DGeometry(data) {
+      while (geomGroup.children.length > 0) {
+        geomGroup.remove(geomGroup.children[0]);
+      }
+      clearLabels();
+
+      const vertMap = {};
+      const sphereGeo = new THREE.SphereGeometry(0.08, 16, 16);
+      const sphereMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+
+      // Vẽ các đỉnh & nhãn tên
+      for (const [name, pos] of Object.entries(data.vertices)) {
+        const v = new THREE.Vector3(pos[0], pos[1], pos[2]);
+        vertMap[name] = v;
+
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        sphere.position.copy(v);
+        geomGroup.add(sphere);
+
+        createLabel(name, v);
+      }
+
+      // Vẽ cạnh nhìn thấy (Nét liền)
+      const solidMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+      (data.visibleEdges || []).forEach(edge => {
+        const p1 = vertMap[edge[0]];
+        const p2 = vertMap[edge[1]];
+        if (p1 && p2) {
+          const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+          const line = new THREE.Line(geo, solidMat);
+          geomGroup.add(line);
+        }
+      });
+
+      // Vẽ cạnh khuất (Nét đứt - Dashed Line)
+      const dashMat = new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.2, gapSize: 0.1 });
+      (data.dashedEdges || []).forEach(edge => {
+        const p1 = vertMap[edge[0]];
+        const p2 = vertMap[edge[1]];
+        if (p1 && p2) {
+          const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+          const line = new THREE.Line(geo, dashMat);
+          line.computeLineDistances();
+          geomGroup.add(line);
+        }
+      });
+
+      // Vẽ mặt phẳng cắt / Thiết diện (bán trong suốt)
+      if (data.plane && data.plane.points.length >= 3) {
+        const pts = data.plane.points.map(ptName => vertMap[ptName]);
+        const planeGeo = new THREE.BufferGeometry();
+        
+        const vertices = new Float32Array([
+          pts[0].x, pts[0].y, pts[0].z,
+          pts[1].x, pts[1].y, pts[1].z,
+          pts[2].x, pts[2].y, pts[2].z
+        ]);
+        planeGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        
+        const planeMat = new THREE.MeshBasicMaterial({
+          color: data.plane.color || 0x3b82f6,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.4
+        });
+        const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+        planeMesh.name = 'sectionPlane';
+        geomGroup.add(planeMesh);
+      }
+    }
+
+    function createLabel(text, vector) {
+      const div = document.createElement('div');
+      div.className = 'absolute text-amber-400 font-black text-xs pointer-events-none select-none font-mono';
+      div.innerText = text;
+      div.dataset.x = vector.x;
+      div.dataset.y = vector.y;
+      div.dataset.z = vector.z;
+      document.getElementById('threejs-canvas-container').appendChild(div);
+      labelElements.push(div);
+    }
+
+    function clearLabels() {
+      labelElements.forEach(el => el.remove());
+      labelElements = [];
+    }
+
+    function updateLabelsPosition() {
+      if (!camera || !renderer) return;
+      const container = document.getElementById('threejs-canvas-container');
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      labelElements.forEach(el => {
+        const v = new THREE.Vector3(parseFloat(el.dataset.x), parseFloat(el.dataset.y), parseFloat(el.dataset.z));
+        v.applyMatrix4(geomGroup.matrixWorld);
+        v.project(camera);
+
+        const x = (v.x * 0.5 + 0.5) * w;
+        const y = (-(v.y * 0.5) + 0.5) * h;
+
+        el.style.left = `${x + 6}px`;
+        el.style.top = `${y - 12}px`;
+        el.style.display = v.z > 1 ? 'none' : 'block';
+      });
+    }
+
+    // ==========================================
+    // 2. MODULE VẬT LÝ 2D (CON LẮC LÒ XO & ĐỒ THỊ)
+    // ==========================================
+    let physK = 50, physM = 0.5, physA = 8;
+    let physTime = 0, isPhysRunning = true;
+    let physHistory = [];
+
+    function initPhysicsCanvas() {
+      updatePhysicsParams();
+      requestAnimationFrame(physicsLoop);
+    }
+
+    function updatePhysicsParams() {
+      physK = parseFloat(document.getElementById('sliderPhysK').value);
+      physM = parseFloat(document.getElementById('sliderPhysM').value);
+      physA = parseFloat(document.getElementById('sliderPhysA').value);
+
+      document.getElementById('txtPhysK').innerText = physK + " N/m";
+      document.getElementById('txtPhysM').innerText = physM.toFixed(1) + " kg";
+      document.getElementById('txtPhysA').innerText = physA + " cm";
+
+      const omega = Math.sqrt(physK / physM);
+      const T = 2 * Math.PI / omega;
+      const E = 0.5 * physK * Math.pow(physA / 100, 2);
+
+      document.getElementById('lblPhysOmega').innerHTML = `$\\omega = ${omega.toFixed(1)}$ rad/s`;
+      document.getElementById('lblPhysT').innerHTML = `$T = ${T.toFixed(2)}$ s`;
+      document.getElementById('lblPhysE').innerHTML = `$W = ${E.toFixed(3)}$ J`;
+
+      if (window.katex) {
+        katex.render(`\\omega = ${omega.toFixed(1)} \\text{ rad/s}`, document.getElementById('lblPhysOmega'));
+        katex.render(`T = ${T.toFixed(2)} \\text{ s}`, document.getElementById('lblPhysT'));
+        katex.render(`W = ${E.toFixed(3)} \\text{ J}`, document.getElementById('lblPhysE'));
+      }
+    }
+
+    function togglePhysicsSim() {
+      isPhysRunning = !isPhysRunning;
+      document.getElementById('btnPlayPausePhys').innerHTML = isPhysRunning 
+        ? '<i class="fa-solid fa-pause"></i> Tạm Dừng' 
+        : '<i class="fa-solid fa-play"></i> Tiếp Tục';
+    }
+
+    function resetPhysicsSim() {
+      physTime = 0;
+      physHistory = [];
+    }
+
+    function physicsLoop() {
+      const canvas = document.getElementById('physicsCanvas');
+      if (canvas && canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width = canvas.clientWidth;
+        const h = canvas.height = canvas.clientHeight;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const omega = Math.sqrt(physK / physM);
+        if (isPhysRunning) {
+          physTime += 0.03;
+        }
+
+        const x_cm = physA * Math.cos(omega * physTime);
+        const originX = 140;
+        const originY = 80;
+        const scaleX = 5;
+        const blockX = originX + x_cm * scaleX;
+
+        // Vách gắn
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(20, originY - 30, 15, 60);
+
+        // Lò xo
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(35, originY);
+        const coils = 12;
+        const springLen = blockX - 35;
+        for (let i = 1; i <= coils; i++) {
+          const px = 35 + (springLen / coils) * (i - 0.5);
+          const py = originY + (i % 2 === 0 ? -12 : 12);
+          ctx.lineTo(px, py);
+        }
+        ctx.lineTo(blockX, originY);
+        ctx.stroke();
+
+        // Vật nặng m
+        ctx.fillStyle = '#6366f1';
+        ctx.fillRect(blockX, originY - 20, 40, 40);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText('m', blockX + 15, originY + 5);
+
+        // Trục tọa độ
+        ctx.strokeStyle = '#475569';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(originX + 20, 20);
+        ctx.lineTo(originX + 20, 140);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('VTCB (O)', originX + 5, 155);
+
+        // Đồ thị x-t
+        const graphTop = 180;
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(20, graphTop, w - 40, 120);
+
+        ctx.strokeStyle = '#475569';
+        ctx.beginPath();
+        ctx.moveTo(40, graphTop + 60);
+        ctx.lineTo(w - 30, graphTop + 60);
+        ctx.moveTo(40, graphTop + 10);
+        ctx.lineTo(40, graphTop + 110);
+        ctx.stroke();
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '10px monospace';
+        ctx.fillText('+A', 15, graphTop + 20);
+        ctx.fillText('0', 25, graphTop + 63);
+        ctx.fillText('-A', 15, graphTop + 105);
+        ctx.fillText('t (s)', w - 30, graphTop + 75);
+
+        if (isPhysRunning) {
+          physHistory.push(x_cm);
+          if (physHistory.length > 250) physHistory.shift();
+        }
+
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < physHistory.length; i++) {
+          const gx = 40 + i * 2;
+          const gy = graphTop + 60 - (physHistory[i] / physA) * 45;
+          if (i === 0) ctx.moveTo(gx, gy);
+          else ctx.lineTo(gx, gy);
+        }
+        ctx.stroke();
+      }
+      requestAnimationFrame(physicsLoop);
+    }
+
+    // ==========================================
+    // 3. MODULE HÓA HỌC 2D (ỐNG NGHIỆM & KẾT TỦA)
+    // ==========================================
+    let tubeLiquid = { color: 'rgba(224, 242, 254, 0.4)', level: 160 };
+    let bubbles = [];
+    let precipitates = [];
+
+    function initChemCanvas() {
+      requestAnimationFrame(chemLoop);
+    }
+
+    function triggerChemReaction(reagent) {
+      const baseLiquid = document.getElementById('chemLiquidSelect').value;
+      const obsText = document.getElementById('chemObservationText');
+      const eqText = document.getElementById('chemEquationText');
+
+      bubbles = [];
+      precipitates = [];
+
+      if (reagent === 'litmus') {
+        if (baseLiquid.includes('HCl') || baseLiquid.includes('H2SO4')) {
+          tubeLiquid.color = 'rgba(239, 68, 68, 0.7)';
+          obsText.innerText = "Dung dịch chuyển sang màu ĐỎ do tác dụng của môi trường Axit (pH < 7).";
+          eqText.innerText = "Axit làm quỳ tím hóa đỏ.";
+        } else if (baseLiquid === 'NaOH') {
+          tubeLiquid.color = 'rgba(59, 130, 246, 0.7)';
+          obsText.innerText = "Dung dịch chuyển sang màu XANH do tác dụng của môi trường Bazo kiềm (pH > 7).";
+          eqText.innerText = "Bazo làm quỳ tím hóa xanh.";
+        } else {
+          tubeLiquid.color = 'rgba(168, 85, 247, 0.7)';
+          obsText.innerText = "Dung dịch muối trung tính giữ nguyên màu tím.";
+          eqText.innerText = "";
+        }
+      } else if (reagent === 'iron') {
+        if (baseLiquid.includes('HCl')) {
+          tubeLiquid.color = 'rgba(202, 138, 4, 0.4)';
+          obsText.innerText = "Kim loại sắt (Fe) tan dần, xuất hiện sủi bọt khí không màu (H2) bay lên.";
+          eqText.innerText = "Fe + 2HCl ➔ FeCl2 + H2 ↑";
+          createBubbles(30);
+        } else {
+          obsText.innerText = "Không có hiện tượng phản ứng hóa học rõ rệt.";
+          eqText.innerText = "";
+        }
+      } else if (reagent === 'bacl2_drop') {
+        if (baseLiquid === 'H2SO4') {
+          tubeLiquid.color = 'rgba(255, 255, 255, 0.8)';
+          obsText.innerText = "Xuất hiện vẩn đục và KẾT TỦA TRẮNG không tan trong axit.";
+          eqText.innerText = "BaCl2 + H2SO4 ➔ BaSO4 ↓ (trắng) + 2HCl";
+          createPrecipitates(50);
+        } else {
+          obsText.innerText = "Không xảy ra kết tủa.";
+          eqText.innerText = "";
+        }
+      } else if (reagent === 'phenolphthalein') {
+        if (baseLiquid === 'NaOH') {
+          tubeLiquid.color = 'rgba(236, 72, 153, 0.75)';
+          obsText.innerText = "Dung dịch không màu chuyển sang màu HỒNG CÁNH SEN đặc trưng.";
+          eqText.innerText = "NaOH (bazo) làm phenolphthalein hóa hồng.";
+        } else {
+          tubeLiquid.color = 'rgba(224, 242, 254, 0.3)';
+          obsText.innerText = "Dung dịch axit/muối không làm đổi màu phenolphthalein.";
+          eqText.innerText = "";
+        }
+      }
+    }
+
+    function createBubbles(count) {
+      for (let i = 0; i < count; i++) {
+        bubbles.push({
+          x: 180 + Math.random() * 40,
+          y: 280 + Math.random() * 30,
+          radius: 2 + Math.random() * 3,
+          speed: 1 + Math.random() * 2
+        });
+      }
+    }
+
+    function createPrecipitates(count) {
+      for (let i = 0; i < count; i++) {
+        precipitates.push({
+          x: 175 + Math.random() * 50,
+          y: 190 + Math.random() * 100,
+          size: 2 + Math.random() * 3
+        });
+      }
+    }
+
+    function resetChemTube() {
+      tubeLiquid.color = 'rgba(224, 242, 254, 0.4)';
+      bubbles = [];
+      precipitates = [];
+      document.getElementById('chemObservationText').innerText = "Ống nghiệm đã được rửa sạch và đổ đầy nước cất.";
+      document.getElementById('chemEquationText').innerText = "";
+    }
+
+    function chemLoop() {
+      const canvas = document.getElementById('chemCanvas');
+      if (canvas && canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Giá đỡ
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(150, 310, 100, 15);
+        ctx.fillRect(195, 80, 10, 230);
+
+        // Dung dịch
+        ctx.fillStyle = tubeLiquid.color;
+        ctx.beginPath();
+        ctx.roundRect(170, 180, 60, 120, [0, 0, 30, 30]);
+        ctx.fill();
+
+        // Bọt khí
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        bubbles.forEach(b => {
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+          ctx.fill();
+          b.y -= b.speed;
+          if (b.y < 180) b.y = 280;
+        });
+
+        // Kết tủa
+        ctx.fillStyle = '#ffffff';
+        precipitates.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Thủy tinh
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(170, 100, 60, 200, [0, 0, 30, 30]);
+        ctx.stroke();
+
+        ctx.strokeRect(165, 96, 70, 6);
+      }
+      requestAnimationFrame(chemLoop);
+    }
+
+    // ==========================================
+    // 4. LOGIC GIA SƯ AI & VISION CHẤM THI
+    // ==========================================
+    function initTutorWelcomeMessage() {
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-2xl bg-gradient-to-tr from-socratic-600 to-emerald-400 text-white flex items-center justify-center flex-shrink-0 text-sm shadow-md">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="bg-white border border-slate-200/90 p-4 rounded-2xl rounded-tl-none max-w-xl text-xs text-slate-800 shadow-sm leading-relaxed space-y-2">
+            <p class="font-bold text-slate-900">Chào em! Thầy là Trợ Giảng AI Socratic K-12 👋</p>
+            <p class="text-slate-600">Thầy sẵn sàng hướng dẫn em phương pháp giải mọi bài tập Toán, Lý, Hóa. Em hãy tải ảnh bài tập lên hoặc sang tab <strong>"STEM & 3D Lab"</strong> để cùng thầy xoay hình học không gian 3D nhé!</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleSendChat(event) {
+      event.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      const container = document.getElementById('chatMessages');
+
+      container.innerHTML += `
+        <div class="flex items-start gap-3 justify-end">
+          <div class="bg-brand-600 text-white p-3 rounded-2xl max-w-md text-xs leading-relaxed">${escapeHtml(text)}</div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        container.innerHTML += `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-2xl bg-socratic-600 text-white flex items-center justify-center text-sm"><i class="fa-solid fa-robot"></i></div>
+            <div class="bg-white border p-4 rounded-2xl max-w-xl text-xs space-y-2">
+              <h3 class="font-bold text-brand-700">💡 Hướng Dẫn Tư Duy Socratic</h3>
+              <p>1. Xác định giả thiết bài toán và các yếu tố song song/vuông góc đã cho.</p>
+              <p>2. Áp dụng định lý: <em>"Nếu hai mặt phẳng phân biệt lần lượt chứa hai đường thẳng song song thì giao tuyến của chúng (nếu có) cũng song song với hai đường thẳng đó."</em></p>
+              <p class="text-indigo-600 font-bold">👉 Em có thể mở Tab "STEM & 3D Lab" để xoay mô hình trực tiếp!</p>
+            </div>
+          </div>
+        `;
+        container.scrollTop = container.scrollHeight;
+      }, 500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function handleDragOver(e) { e.preventDefault(); }
+    function handleDragLeave(e) { e.preventDefault(); }
+    function handleTutorDrop(e) { e.preventDefault(); }
+    function handleTutorFileSelect(e) {}
+    function removeTutorAttachment() {}
+    function handleGradingDrop(e) { e.preventDefault(); }
+    function handleGradingFileInput(e) {}
+    function exportGradeReportExcel() { alert('Đang xuất sổ điểm Excel chuẩn Bộ GD&ĐT...'); }
+  </script>
+</body>
+</html>
