@@ -5,6 +5,7 @@ import json
 import secrets
 import time
 import sqlite3
+from psycopg.errors import UniqueViolation
 from pathlib import Path
 from typing import Any, Literal
 from fastapi import FastAPI, Request, Response, HTTPException, UploadFile, File, Form
@@ -12,7 +13,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from . import config
-from .database import init_db, connection
+from .database import CHAT_ORDER_COLUMN, connection, init_db
 from .security import (uid, make_code, hash_password, verify_password,
                        new_session, session_digest, COOKIE_NAME, user_for_request, require_role)
 from .parsers import extract, IMAGE_TYPES
@@ -204,7 +205,7 @@ def register(data: Register, response: Response):
         with connection() as db:
             db.execute('INSERT INTO users (id,name,email,password_hash,role,grade) VALUES (?,?,?,?,?,?)',
                     (user_id,data.name.strip(),str(data.email).lower(),hash_password(data.password),data.role,data.grade))
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, UniqueViolation):
         raise HTTPException(409,'Email đã được đăng ký.')
     cookie_login(response, user_id)
     return {'id':user_id,'name':data.name.strip(),'email':str(data.email).lower(),'role':data.role,'grade':data.grade}
@@ -259,7 +260,7 @@ def my_files(request: Request):
 def chat_history(request: Request):
     user = user_for_request(request)
     with connection() as db:
-        rows = db.execute('SELECT id,role,content,created_at FROM chat_messages WHERE user_id=? ORDER BY rowid DESC LIMIT 80',(user['id'],)).fetchall()
+        rows = db.execute(f'SELECT id,role,content,created_at FROM chat_messages WHERE user_id=? ORDER BY {CHAT_ORDER_COLUMN} DESC LIMIT 80',(user['id'],)).fetchall()
     return [dict(row) for row in reversed(rows)]
 
 @app.delete('/api/chat')
@@ -276,7 +277,7 @@ async def chat(data: ChatIn, request: Request):
         raise HTTPException(422,'Hãy nhập tin nhắn hoặc đính kèm tệp.')
     # avoid excessive usage per user, server-side
     with connection() as db:
-        old = db.execute('SELECT role,content FROM chat_messages WHERE user_id=? ORDER BY rowid DESC LIMIT 12',(user['id'],)).fetchall()
+        old = db.execute(f'SELECT role,content FROM chat_messages WHERE user_id=? ORDER BY {CHAT_ORDER_COLUMN} DESC LIMIT 12',(user['id'],)).fetchall()
         attachment = None
         if data.file_id:
             file_row = db.execute('SELECT * FROM files WHERE id=? AND owner_id=?',(data.file_id,user['id'])).fetchone()
