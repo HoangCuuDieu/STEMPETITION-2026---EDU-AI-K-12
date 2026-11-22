@@ -333,7 +333,11 @@ def join_class(data: JoinCode, request: Request):
         cl = db.execute('SELECT id,title,grade FROM classrooms WHERE join_code=?',(data.code.strip().upper(),)).fetchone()
         if not cl:
             raise HTTPException(404,'Mã lớp không tồn tại.')
-        db.execute('INSERT OR IGNORE INTO enrollments(classroom_id,student_id) VALUES (?,?)',(cl['id'],user['id']))
+        db.execute(
+            'INSERT INTO enrollments(classroom_id,student_id) VALUES (?,?) '
+            'ON CONFLICT (classroom_id, student_id) DO NOTHING',
+            (cl['id'], user['id']),
+        )
     return dict(cl)
 
 @app.get('/api/classes/{class_id}/students')
@@ -424,17 +428,17 @@ def close_exam(exam_id: str, request: Request):
     exam_for_teacher(exam_id,user['id'])
     with connection() as db:
         active = db.execute('''SELECT a.*,e.questions_json,e.duration_minutes FROM attempts a
-            JOIN exams e ON e.id=a.exam_id WHERE a.exam_id=? AND a.status="active"''',(exam_id,)).fetchall()
+            JOIN exams e ON e.id=a.exam_id WHERE a.exam_id=? AND a.status=?''',(exam_id, 'active')).fetchall()
         for attempt in active:
             submit_locked(dict(attempt),db)
-        db.execute('UPDATE exams SET status="closed" WHERE id=?',(exam_id,))
+        db.execute('UPDATE exams SET status=? WHERE id=?',('closed', exam_id))
     return {'status':'closed','auto_submitted':len(active)}
 
 @app.post('/api/exams/join')
 def join_exam(data: JoinCode, request: Request):
     user = user_for_request(request); require_role(user,'student')
     with connection() as db:
-        exam = db.execute('SELECT * FROM exams WHERE access_code=? AND status="published"',(data.code.strip().upper(),)).fetchone()
+            exam = db.execute('SELECT * FROM exams WHERE access_code=? AND status=?',(data.code.strip().upper(), 'published')).fetchone()
         if not exam:
             raise HTTPException(404,'Mã bài kiểm tra không tồn tại hoặc đề chưa mở.')
         if exam['classroom_id']:
@@ -483,8 +487,8 @@ def submit_locked(row, db):
     qs=json.loads(row['questions_json']); answers=json.loads(row['answers_json'])
     score,subjective=score_answers(qs,answers)
     final = None if subjective else score
-    db.execute('''UPDATE attempts SET status="submitted",submitted_at=?,auto_score=?,final_score=? WHERE id=?''',
-               (int(time.time()),score,final,row['id']))
+    db.execute('''UPDATE attempts SET status=?,submitted_at=?,auto_score=?,final_score=? WHERE id=?''',
+               ('submitted', int(time.time()), score, final, row['id']))
     return {'status':'submitted','auto_score':score,'final_score':final,
             'notice':'Câu trả lời ngắn đang chờ giáo viên duyệt.' if subjective else 'Đã chấm các câu khách quan.'}
 
@@ -585,7 +589,7 @@ def teacher_summary(request: Request):
         c=db.execute('SELECT COUNT(*) n FROM classrooms WHERE teacher_id=?',(user['id'],)).fetchone()['n']
         e=db.execute('SELECT COUNT(*) n FROM exams WHERE teacher_id=?',(user['id'],)).fetchone()['n']
         a=db.execute('''SELECT COUNT(*) n FROM attempts a JOIN exams e ON e.id=a.exam_id
-                      WHERE e.teacher_id=? AND a.status="submitted"''',(user['id'],)).fetchone()['n']
+                      WHERE e.teacher_id=? AND a.status=?''',(user['id'], 'submitted')).fetchone()['n']
         s=db.execute('''SELECT COUNT(DISTINCT student_id) n FROM enrollments en JOIN classrooms c ON c.id=en.classroom_id
                       WHERE c.teacher_id=?''',(user['id'],)).fetchone()['n']
         avg=db.execute('''SELECT AVG(a.final_score) v FROM attempts a JOIN exams e ON e.id=a.exam_id
