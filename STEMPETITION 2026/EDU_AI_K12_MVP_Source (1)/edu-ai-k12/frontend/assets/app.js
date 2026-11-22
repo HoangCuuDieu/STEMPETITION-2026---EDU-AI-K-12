@@ -117,8 +117,19 @@ async function renderLab(view){
 }
 async function renderGrading(){
   mount(shell(`<main class="page">${title('Chấm bài và phản hồi bằng AI','Phân tích bài làm theo barem giáo viên hoặc thang điểm dự kiến của AI.')}
-  <div class="work-grid"><section class="panel spaced"><h3 class="panel-title">1. TÀI LIỆU CHẤM BÀI</h3><div><label>Bài làm học sinh (bắt buộc)</label><input type="file" id="work" accept=".pdf,.docx,.pptx,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"/></div><div><label>Barem / đáp án giáo viên (không bắt buộc)</label><input type="file" id="rubric" accept=".pdf,.docx,.pptx,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"/></div><div class="field"><label>Môn học dự kiến</label><select id="grade-subject">${opt(SUBJECTS,'Toán học')}</select></div><div class="field"><label>Khối lớp</label><select id="grade-class">${opt(Array.from({length:12},(_,i)=>i+1),state.grade)}</select></div><button class="btn full" id="run-grading">✓ Phân tích và chấm bài</button><p class="notice">Đối với chữ viết khó đọc hoặc câu hỏi mở, AI có thể không đủ căn cứ. Giáo viên cần duyệt kết quả trước khi dùng chính thức.</p></section>
+  <div class="work-grid"><section class="panel spaced"><h3 class="panel-title">1. TÀI LIỆU CHẤM BÀI</h3><div><label>Bài làm học sinh (bắt buộc)</label><input type="file" id="work" accept=".pdf,.docx,.pptx,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"/></div><div><label>Barem / đáp án giáo viên (không bắt buộc)</label><input type="file" id="rubric" accept=".pdf,.docx,.pptx,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"/><button type="button" class="btn small secondary" id="clear-rubric" style="display:none">Bỏ barem</button></div><div class="field"><label>Môn học dự kiến</label><select id="grade-subject">${opt(SUBJECTS,'Toán học')}</select></div><div class="field"><label>Khối lớp</label><select id="grade-class">${opt(Array.from({length:12},(_,i)=>i+1),state.grade)}</select></div><button class="btn full" id="run-grading">✓ Phân tích và chấm bài</button><p class="notice">Đối với chữ viết khó đọc hoặc câu hỏi mở, AI có thể không đủ căn cứ. Giáo viên cần duyệt kết quả trước khi dùng chính thức.</p></section>
   <section class="panel"><h3 class="panel-title">2. BÁO CÁO CHẤM BÀI</h3><div id="grading-result" class="lead">Chọn bài làm, tải barem nếu có và nhấn “Phân tích và chấm bài”. Báo cáo sẽ xuất hiện tại đây.</div></section></div></main>`));bindNav();
+  const rubricInput = $('#rubric');
+  const clearRubric = $('#clear-rubric');
+  const updateClearRubric = () => {
+    clearRubric.style.display = rubricInput.files.length ? '' : 'none';
+  };
+  rubricInput.addEventListener('change', updateClearRubric);
+  clearRubric.addEventListener('click', () => {
+    rubricInput.value = '';
+    updateClearRubric();
+    rubricInput.focus();
+  });
   $('#run-grading').onclick=async()=>{
     const work=$('#work').files[0],rubric=$('#rubric').files[0];if(!work)return toast('Hãy chọn bài làm trước.',true);
     const btn=$('#run-grading');btn.disabled=true;btn.textContent='Đang đọc và phân tích…';
