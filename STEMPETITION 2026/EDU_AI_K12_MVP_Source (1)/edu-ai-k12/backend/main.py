@@ -171,6 +171,27 @@ def exam_for_teacher(exam_id, teacher_id):
 def health():
     return {'ok':True,'ai_configured':bool(config.GEMINI_API_KEY),'version':'0.1.0'}
 
+@app.get('/api/health/database')
+def database_health():
+    import os
+
+    import psycopg
+
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        raise HTTPException(503, 'Thiếu cấu hình DATABASE_URL.')
+
+    try:
+        with psycopg.connect(
+            database_url, connect_timeout=5, sslmode='require',
+            prepare_threshold=None,
+        ) as db:
+            db.execute('SELECT 1').fetchone()
+    except psycopg.Error:
+        raise HTTPException(503, 'Chưa kết nối được PostgreSQL.') from None
+
+    return {'database': 'ok'}
+
 @app.post('/api/auth/register')
 def register(data: Register, response: Response):
     if data.role == 'teacher' and (not config.TEACHER_INVITE_CODE or
