@@ -18,6 +18,7 @@ from .security import (uid, make_code, hash_password, verify_password,
                        new_session, session_digest, COOKIE_NAME, user_for_request, require_role)
 from .parsers import extract, IMAGE_TYPES
 from .ai import generate, image_part, TUTOR_INSTRUCTION, parse_json_response
+from .storage import read_object, upload_object
 
 app = FastAPI(title='AI Education Platform K-12', version='0.1.0', docs_url='/api/docs', openapi_url='/api/openapi.json')
 init_db()
@@ -242,8 +243,7 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     mime, extracted = extract(filename,data)
     fid = uid()
     suffix = Path(filename).suffix.lower()
-    storage = config.UPLOAD_DIR / f'{fid}{suffix}'
-    storage.write_bytes(data)
+    await upload_object(f'{fid}{suffix}', data, mime)
     with connection() as db:
         db.execute('INSERT INTO files(id,owner_id,filename,mime,kind,extracted,size) VALUES (?,?,?,?,?,?,?)',
                 (fid,user['id'],filename,mime,'image' if mime in IMAGE_TYPES else 'document',extracted,len(data)))
@@ -288,10 +288,10 @@ async def chat(data: ChatIn, request: Request):
     if attachment:
         if attachment['kind']=='image':
             suffix = Path(attachment['filename']).suffix.lower()
-            raw = (config.UPLOAD_DIR / f'{attachment["id"]}{suffix}').read_bytes()
+            raw = await read_object(f'{attachment["id"]}{suffix}')
             parts.append(image_part(raw,attachment['mime']))
         elif attachment['mime']=='application/pdf':
-            raw=(config.UPLOAD_DIR / f'{attachment["id"]}.pdf').read_bytes()
+            raw = await read_object(f'{attachment["id"]}.pdf')
             parts.append({'text':f'Tài liệu PDF: {attachment["filename"]}. Đọc cả trang chữ, sơ đồ và hình vẽ theo khả năng Gemini Vision.'})
             parts.append(image_part(raw,'application/pdf'))
         else:
@@ -641,10 +641,10 @@ async def grade_submission(request: Request, work_id: str = Form(...), rubric_id
     for title,doc in [('Bài học sinh',work),('Barem/đáp án',rubric)]:
         if doc is None: continue
         if doc['kind']=='image':
-            raw=(config.UPLOAD_DIR / f'{doc["id"]}{Path(doc["filename"]).suffix.lower()}').read_bytes()
+            raw = await read_object(f'{doc["id"]}{Path(doc["filename"]).suffix.lower()}')
             parts.extend([{'text':f'{title} ({doc["filename"]})'},image_part(raw,doc['mime'])])
         elif doc['mime']=='application/pdf':
-            raw=(config.UPLOAD_DIR / f'{doc["id"]}.pdf').read_bytes()
+            raw = await read_object(f'{doc["id"]}.pdf')
             parts.extend([{'text':f'{title}: {doc["filename"]}'},image_part(raw,'application/pdf')])
         else:
             parts.append({'text':f'{title} ({doc["filename"]}):\n{doc["extracted"]}'})
