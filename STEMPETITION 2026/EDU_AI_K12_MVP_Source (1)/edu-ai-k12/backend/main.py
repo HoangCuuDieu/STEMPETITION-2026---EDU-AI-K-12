@@ -438,7 +438,7 @@ def close_exam(exam_id: str, request: Request):
 def join_exam(data: JoinCode, request: Request):
     user = user_for_request(request); require_role(user,'student')
     with connection() as db:
-            exam = db.execute('SELECT * FROM exams WHERE access_code=? AND status=?',(data.code.strip().upper(), 'published')).fetchone()
+        exam = db.execute('SELECT * FROM exams WHERE access_code=? AND status=?',(data.code.strip().upper(), 'published')).fetchone()
         if not exam:
             raise HTTPException(404,'Mã bài kiểm tra không tồn tại hoặc đề chưa mở.')
         if exam['classroom_id']:
