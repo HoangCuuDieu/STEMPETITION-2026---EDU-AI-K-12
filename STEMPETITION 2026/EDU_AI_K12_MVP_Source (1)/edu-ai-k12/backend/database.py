@@ -1,7 +1,19 @@
 """Small, parameterized SQLite data layer. One connection per transaction."""
+import os
 import sqlite3
 from contextlib import contextmanager
 from . import config
+
+USE_POSTGRES = os.getenv('DB_BACKEND') == 'postgres'
+CHAT_ORDER_COLUMN = 'message_order' if USE_POSTGRES else 'rowid'
+
+
+class PostgresConnection:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def execute(self, sql, params=()):
+        return self.conn.execute(sql.replace('?', '%s'), params)
 
 SCHEMA = '''
 PRAGMA foreign_keys=ON;
@@ -71,6 +83,20 @@ CREATE INDEX IF NOT EXISTS idx_attempt_exam ON attempts(exam_id);
 
 @contextmanager
 def connection():
+    if USE_POSTGRES:
+        import psycopg
+        from psycopg.rows import dict_row
+
+        with psycopg.connect(
+            os.environ['DATABASE_URL'],
+            connect_timeout=5,
+            sslmode='require',
+            prepare_threshold=None,
+            row_factory=dict_row,
+        ) as conn:
+            yield PostgresConnection(conn)
+        return
+     
     conn = sqlite3.connect(config.DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA foreign_keys = ON')
@@ -85,5 +111,7 @@ def connection():
         conn.close()
 
 def init_db():
+    if USE_POSTGRES:
+        return
     with connection() as db:
         db.executescript(SCHEMA)
