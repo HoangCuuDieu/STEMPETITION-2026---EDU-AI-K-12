@@ -257,6 +257,20 @@ def my_files(request: Request):
     with connection() as db:
         return [dict(row) for row in db.execute('SELECT id,filename,kind,size,created_at FROM files WHERE owner_id=? ORDER BY created_at DESC LIMIT 60',(user['id'],))]
 
+def subject_context(subject: str) -> str:
+    label = subject.strip()
+    if label.casefold() in {'', 'all', 'auto', 'tự động', 'tất cả 10 môn'}:
+        return (
+            'Chế độ nhận diện môn từ nội dung. Hãy đọc câu hỏi, bài làm và tài liệu đính kèm trước khi xác định môn. '
+            'Dùng ngữ cảnh hội thoại cho câu hỏi nối tiếp. Nếu có đủ căn cứ, chọn môn phù hợp nhất trong các môn: '
+            'Toán, Vật lý, Hóa học, Sinh học, Tin học, Ngữ văn, Tiếng Anh, Lịch sử, Địa lý, GDCD. '
+            'Nếu nội dung ngoài danh sách hoặc chưa đủ căn cứ, giữ nhãn môn là “Tự động”. '
+            'Có thể nêu môn hoặc lĩnh vực khác dưới dạng phỏng đoán có căn cứ và tiếp tục hỗ trợ. '
+            '“Tự động” là chế độ chọn môn. Không suy ra môn Tự động hóa từ nhãn này. '
+            'Với lời chào hoặc câu trò chuyện thông thường, trả lời tự nhiên.'
+        )
+    return f'Môn người dùng chọn: {label}.'
+
 @app.get('/api/chat')
 def chat_history(request: Request):
     user = user_for_request(request)
@@ -285,7 +299,7 @@ async def chat(data: ChatIn, request: Request):
             if not file_row:
                 raise HTTPException(404,'Không thấy tệp của bạn.')
             attachment = dict(file_row)
-    parts = [{'text':f'Khối lớp: {data.grade}. Môn học: {data.subject}.\nCâu hỏi: {data.message.strip() or "Hãy phân tích tài liệu đính kèm."}'}]
+    parts = [{'text':f'Khối lớp: {data.grade}. {subject_context(data.subject)}\nCâu hỏi: {data.message.strip() or "Hãy phân tích tài liệu đính kèm."}'}]
     if attachment:
         if attachment['kind']=='image':
             suffix = Path(attachment['filename']).suffix.lower()
@@ -666,7 +680,7 @@ async def grade_submission(request: Request, work_id: str = Form(...), rubric_id
         rubric=db.execute('SELECT * FROM files WHERE id=? AND owner_id=?',(rubric_id,user['id'])).fetchone() if rubric_id else None
     if not work:
         raise HTTPException(404,'Không thấy bài làm của bạn.')
-    parts=[{'text':f'Môn dự kiến: {subject}, khối {grade}. Hãy kiểm tra bài có đúng môn không trước khi chấm.'}]
+    parts=[{'text':f'Khối lớp: {grade}. {subject_context(subject)} Hãy xác định môn dựa trên bài làm trước khi chấm.'}]
     for title,doc in [('Bài học sinh',work),('Barem/đáp án',rubric)]:
         if doc is None: continue
         if doc['kind']=='image':
@@ -699,6 +713,7 @@ def spa_fallback(path: str):
     if path.startswith('api/'):
         raise HTTPException(404,'API không tồn tại.')
     return FileResponse(FRONTEND / 'index.html')
+
 
 
 

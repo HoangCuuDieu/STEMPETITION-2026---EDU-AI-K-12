@@ -239,7 +239,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     try {
       const data = await request('chat', {
         message: query, grade: account?.grade || 11,
-        subject: subjectFilter === 'ALL' ? 'Tự động' : subjectFilter,
+        subject: subjectFilter,
         level, file_id: fileId || null,
       });
       if (!data.reply) throw new Error('Chưa nhận được phản hồi từ Gemini.');
@@ -538,3 +538,4 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     </div>
   );
 }
+
