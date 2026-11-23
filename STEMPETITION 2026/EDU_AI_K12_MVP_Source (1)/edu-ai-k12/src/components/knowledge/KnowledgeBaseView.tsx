@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, ExternalLink, Search } from 'lucide-react';
 import { KNOWLEDGE_BASE } from '../../data/knowledgeBase';
 import type { CurriculumSubject, InternalModelLink } from '../../types/assistant';
@@ -46,6 +46,10 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
   const [subject, setSubject] = useState<'ALL' | CurriculumSubject>('ALL');
   const [gradeBucket, setGradeBucket] = useState<'ALL' | 'primary' | 'middle' | 'high'>('ALL');
 
+  const batchSize = 4;
+  const [visibleCount, setVisibleCount] = useState(batchSize);
+  const moreRef = useRef<HTMLButtonElement>(null);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return KNOWLEDGE_BASE.filter((item) => {
@@ -60,6 +64,19 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
       return true;
     });
   }, [search, subject, gradeBucket]);
+
+  useEffect(() => {
+    const button = moreRef.current;
+    if (!button || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect();
+        setVisibleCount(count => count + batchSize);
+      }
+    }, { rootMargin: '250px' });
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, [visibleCount, filtered]);
 
   const subjectTheme = (subj: CurriculumSubject) => {
     switch (subj) {
@@ -153,7 +170,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setVisibleCount(batchSize); setSearch(e.target.value); }}
               placeholder="Tìm chuyên đề, công thức..."
               className="pl-8 pr-3 py-2 text-sm bg-white border border-teal-200 rounded-xl w-56 focus:outline-none focus:border-teal-500 transition-colors"
             />
@@ -161,7 +178,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
 
           <select
             value={subject}
-            onChange={(e) => setSubject(e.target.value as 'ALL' | CurriculumSubject)}
+            onChange={(e) => { setVisibleCount(batchSize); setSubject(e.target.value as 'ALL' | CurriculumSubject); }}
             aria-label="Lọc theo môn học"
             className="px-3 py-2 text-sm border border-teal-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-teal-500"
           >
@@ -175,9 +192,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
 
           <select
             value={gradeBucket}
-            onChange={(e) =>
-              setGradeBucket(e.target.value as 'ALL' | 'primary' | 'middle' | 'high')
-            }
+            onChange={(e) => { setVisibleCount(batchSize); setGradeBucket(e.target.value as 'ALL' | 'primary' | 'middle' | 'high'); }}
             aria-label="Lọc theo cấp học"
             className="px-3 py-2 text-sm border border-teal-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-teal-500"
           >
@@ -196,7 +211,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filtered.map((entry) => {
+          {filtered.slice(0, visibleCount).map((entry) => {
             const theme = subjectTheme(entry.subject);
             return (
               <article
@@ -257,8 +272,15 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
               </article>
             );
           })}
+          {visibleCount < filtered.length && (
+            <button ref={moreRef} type="button" className="col-span-full rounded-xl border bg-white p-3"
+              onClick={() => setVisibleCount(count => count + batchSize)}>
+              Xem thêm chuyên đề
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 }
+
