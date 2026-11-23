@@ -1,4 +1,6 @@
-import { useState, type ComponentType } from 'react';
+import { SignIn } from './SignIn';
+import { AccountContext, request, type Account } from './services/account';
+import { useEffect, useState, type ComponentType } from 'react';
 import {
   Atom,
   Award,
@@ -64,6 +66,33 @@ const NAV_TABS: {
 ];
 
 export default function App() {
+  const [user, setUser] = useState<Account | null>(null);
+  const [checking, setChecking] = useState(true);
+  useEffect(() => {
+    let active = true;
+    async function refresh() {
+      try {
+        const account = await request('auth/me');
+        if (active) setUser(account.id ? account : null);
+      } catch { if (active) setUser(null); }
+      finally { if (active) setChecking(false); }
+    }
+    const expire = () => setUser(null);
+    window.addEventListener('session-expired', expire);
+    void refresh();
+    window.addEventListener('focus', refresh);
+    return () => { active = false; window.removeEventListener('focus', refresh); window.removeEventListener('session-expired', expire); };
+  }, []);
+  if (!user) return <SignIn checking={checking} onLogin={setUser}/>;
+  return <AccountContext.Provider value={user}><Workspace key={user.id} user={user} onLogout={() => setUser(null)}/></AccountContext.Provider>;
+}
+
+function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
+  const [logoutError, setLogoutError] = useState('');
+  async function logout() {
+    try { await request('auth/logout', {}); onLogout(); }
+    catch { setLogoutError('Đăng xuất chưa thành công. Vui lòng thử lại.'); }
+  }
   const [activeTab, setActiveTab] = useState<AppTab>('lab');
   const [labDomain, setLabDomain] = useState<LabDomain>('physics');
   const [selectedMathId, setSelectedMathId] = useState<string>('math-pyramid');
@@ -86,7 +115,7 @@ export default function App() {
           aria-hidden="true"
           className="h-1 w-full bg-gradient-to-r from-violet-600 via-sky-500 via-50% to-emerald-500"
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-15 flex items-center justify-between gap-4 sm:gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-15 flex items-center justify-between gap-2 sm:gap-4">
           {/* Zone 1: Friendly Brand Emblem + Gradient Wordmark */}
           <button
             type="button"
@@ -104,7 +133,7 @@ export default function App() {
           {/* Zone 2 (Desktop): Colorful Icon + Typographic Nav */}
           <nav
             aria-label="Điều hướng chính"
-            className="hidden sm:flex items-center gap-6 h-full"
+            className="hidden lg:flex items-center gap-4 h-full"
           >
             {NAV_TABS.map((tab) => {
               const active = activeTab === tab.id;
@@ -131,7 +160,7 @@ export default function App() {
             })}
           </nav>
 
-          {/* Zone 3: Vibrant Primary CTA */}
+          <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={() => setActiveTab(activeTab === 'lab' ? 'assistant' : 'lab')}
@@ -140,12 +169,19 @@ export default function App() {
             <Sparkles className="w-3.5 h-3.5" />
             {activeTab === 'lab' ? 'Hỏi Trợ lý' : 'Mở Thí nghiệm'}
           </button>
+          <details className="relative min-w-0 text-center text-sm" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.open = false; }} onKeyDown={e => { if (e.key === 'Escape') { e.currentTarget.open = false; e.currentTarget.querySelector('summary')?.focus(); } }}>
+            <summary title={user.name} className="block max-w-32 truncate cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold">{user.name}</summary>
+            <div className="absolute inset-x-0 top-full mt-1">
+              <button onClick={logout} className="w-full rounded-xl border border-slate-200 bg-white py-2 shadow">Đăng xuất</button>
+            </div>
+          </details>
+          </div>
         </div>
 
         {/* Mobile sub-navigation bar so all 5 tabs remain unclipped on narrow screens */}
         <nav
           aria-label="Điều hướng di động"
-          className="sm:hidden border-t border-indigo-100/70 px-2.5 h-10 flex items-center justify-between gap-1 overflow-x-auto bg-white/80"
+          className="lg:hidden border-t border-indigo-100/70 px-2.5 h-10 flex items-center justify-between gap-1 overflow-x-auto bg-white/80"
         >
           {NAV_TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -171,7 +207,7 @@ export default function App() {
         </nav>
       </header>
 
-      {/* Main Workspace */}
+      {logoutError && <p role="alert">{logoutError}</p>}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 sm:py-7">
         {activeTab === 'lab' && (
           <div className="space-y-6">
@@ -274,3 +310,5 @@ export default function App() {
     </div>
   );
 }
+
+
