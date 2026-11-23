@@ -46,6 +46,12 @@ CREATE TABLE IF NOT EXISTS chat_messages (
  role TEXT NOT NULL CHECK(role IN ('user','assistant')),
  content TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS favorites (
+    owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    domain TEXT NOT NULL CHECK (domain IN ('physics', 'chemistry')),
+    item_id TEXT NOT NULL,
+    PRIMARY KEY (owner_id, domain, item_id)
+);
 CREATE TABLE IF NOT EXISTS saved_models (
  id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id),
  title TEXT NOT NULL, kind TEXT NOT NULL, data_json TEXT NOT NULL,
@@ -115,3 +121,4 @@ def init_db():
         return
     with connection() as db:
         db.executescript(SCHEMA)
+

@@ -98,7 +98,7 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
   }, [search, categoryFilter, structureFilter, onlyFavorites, favorites]);
 
   const handleToggleFavorite = async (id: string) => {
-    const next = await toggleFavorite(id, 'chemistry');
+    const next = await toggleFavorite(id, 'chemistry', !favorites.includes(id));
     setFavorites((prev) =>
       next ? [...new Set([...prev, id])] : prev.filter((f) => f !== id),
     );
@@ -406,3 +406,4 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
     </div>
   );
 }
+

@@ -49,10 +49,17 @@ function getDB(): Promise<IDBPDatabase<EduMindDBSchema>> {
 export async function toggleFavorite(
   id: string,
   domain: 'physics' | 'chemistry',
+  save: boolean,
 ): Promise<boolean> {
+  const response = await fetch('/api/favorites/' + domain + '/' + encodeURIComponent(id), {
+    method: save ? 'PUT' : 'DELETE',
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+  });
+  if (response.ok) return (await response.json()).saved;
+  if (response.status !== 401) throw new Error('Chưa lưu được mục yêu thích.');
   const db = await getDB();
-  const existing = await db.get('favorites', id);
-  if (existing) {
+  
+  if (!save) {
     await db.delete('favorites', id);
     return false;
   }
@@ -64,6 +71,9 @@ export async function getFavoritesByDomain(
   domain: 'physics' | 'chemistry',
 ): Promise<string[]> {
   const db = await getDB();
+  const response = await fetch('/api/favorites/' + domain, {cache: 'no-store'});
+  if (response.ok) return response.json();
+  if (response.status !== 401) throw new Error('Chưa tải được mục yêu thích.');
   const all = await db.getAll('favorites');
   return all.filter((f) => f.domain === domain).map((f) => f.id);
 }
@@ -94,3 +104,4 @@ export async function loadGradingRecords(): Promise<GradingResult[]> {
   const list = await db.getAll('gradingRecords');
   return list.sort((a, b) => b.createdAt - a.createdAt);
 }
+

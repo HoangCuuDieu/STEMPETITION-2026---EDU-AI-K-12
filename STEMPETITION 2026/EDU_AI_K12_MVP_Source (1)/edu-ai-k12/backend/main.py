@@ -597,6 +597,30 @@ def teacher_summary(request: Request):
                        WHERE e.teacher_id=? AND a.final_score IS NOT NULL''',(user['id'],)).fetchone()['v']
     return {'classes':c,'exams':e,'submitted':a,'students':s,'average_score':round(avg,2) if avg is not None else None}
 
+FavoriteDomain = Literal['physics', 'chemistry']
+
+@app.get('/api/favorites/{domain}')
+def list_favorites(domain: FavoriteDomain, request: Request):
+    owner = user_for_request(request)['id']
+    with connection() as db:
+        rows = db.execute('SELECT item_id FROM favorites WHERE owner_id=? AND domain=? ORDER BY item_id',
+                          (owner, domain)).fetchall()
+    return [row['item_id'] for row in rows]
+
+@app.put('/api/favorites/{domain}/{item_id}')
+@app.delete('/api/favorites/{domain}/{item_id}')
+def set_favorite(domain: FavoriteDomain, item_id: str, request: Request):
+    owner = user_for_request(request)['id']
+    if len(item_id) > 100:
+        raise HTTPException(422, 'Mã mô hình quá dài.')
+    with connection() as db:
+        params = (owner, domain, item_id)
+        if request.method == 'PUT':
+            db.execute('INSERT INTO favorites(owner_id,domain,item_id) VALUES (?,?,?) ON CONFLICT DO NOTHING', params)
+        else:
+            db.execute('DELETE FROM favorites WHERE owner_id=? AND domain=? AND item_id=?', params)
+    return {'saved': request.method == 'PUT'}
+
 @app.post('/api/models')
 def save_model(data: ModelIn, request: Request):
     user=user_for_request(request)
@@ -670,4 +694,5 @@ def spa_fallback(path: str):
     if path.startswith('api/'):
         raise HTTPException(404,'API không tồn tại.')
     return FileResponse(FRONTEND / 'index.html')
+
 

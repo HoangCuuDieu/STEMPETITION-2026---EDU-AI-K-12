@@ -231,7 +231,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   };
 
   const handleToggleFavorite = async (id: string) => {
-    const nextState = await toggleFavorite(id, 'physics');
+    const nextState = await toggleFavorite(id, 'physics', !favorites.includes(id));
     setFavorites((prev) =>
       nextState ? [...new Set([...prev, id])] : prev.filter((f) => f !== id),
     );
@@ -606,3 +606,4 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
     </div>
   );
 }
+
