@@ -364,7 +364,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
 
       {/* Right Chat Stream (8 cols) */}
       <div className="lg:col-span-8 lg:sticky lg:top-[84px] rounded-2xl border border-violet-200/80 bg-white/95 shadow-[0_6px_28px_rgba(99,102,241,0.08)] flex flex-col h-[min(600px,calc(100dvh-148px))] lg:h-[calc(100dvh-128px)] min-h-[440px] max-h-[760px] overflow-hidden">
-        <div className="shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-violet-100 bg-gradient-to-r from-violet-50/80 via-sky-50/60 to-emerald-50/40">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-b border-violet-100 bg-gradient-to-r from-violet-50/80 via-sky-50/60 to-emerald-50/40">
           <div className="flex items-center gap-3">
             <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500 text-white inline-flex items-center justify-center shadow-sm shadow-indigo-500/25 shrink-0">
               <Sparkles className="w-4.5 h-4.5" />
@@ -378,6 +378,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
               </div>
             </div>
           </div>
+          <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <button type="button" onClick={downloadConversation} disabled={!messages.length || sending || clearing} className="inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-bold" title="Tải bản sao .txt"><Download size={15}/>Lưu hội thoại (.txt)</button>
           {messages.length > 0 && (
             <button
@@ -389,6 +390,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
               Xóa hội thoại
             </button>
           )}
+          </div>
         </div>
 
         {/* Message List */}
@@ -538,4 +540,5 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     </div>
   );
 }
+
 
