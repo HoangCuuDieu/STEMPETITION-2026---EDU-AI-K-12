@@ -659,7 +659,8 @@ Không đoán chữ khó đọc; không coi kết quả AI là quyết định c
 
 # Serve static frontend on same origin, with relative /api calls and no permissive CORS.
 FRONTEND = config.ROOT / 'frontend'
-app.mount('/assets',StaticFiles(directory=FRONTEND / 'assets'),name='assets')
+if (FRONTEND / 'assets').is_dir():
+    app.mount('/assets',StaticFiles(directory=FRONTEND / 'assets'),name='assets')
 @app.get('/')
 def frontend_index():
     return FileResponse(FRONTEND / 'index.html')
@@ -669,3 +670,4 @@ def spa_fallback(path: str):
     if path.startswith('api/'):
         raise HTTPException(404,'API không tồn tại.')
     return FileResponse(FRONTEND / 'index.html')
+

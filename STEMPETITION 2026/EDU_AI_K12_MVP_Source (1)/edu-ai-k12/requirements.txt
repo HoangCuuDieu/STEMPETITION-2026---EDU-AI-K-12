@@ -9,3 +9,4 @@ python-pptx>=1,<2
 openpyxl>=3,<4
 Pillow>=11,<13
 email-validator>=2,<3
+psycopg[binary]>=3.2,<4
