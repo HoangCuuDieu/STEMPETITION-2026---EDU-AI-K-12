@@ -1,23 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Cpu,
+  Download,
   FileUp,
   Send,
   Sparkles,
   Trash2,
   ExternalLink,
 } from 'lucide-react';
-import {
-  clearChatHistory,
-  loadChatHistory,
-  saveChatMessage,
-} from '../../services/db';
-import { extractTextFromFile } from '../../services/fileExtractor';
-import {
-  localAIService,
-  type LocalAIStatus,
-} from '../../services/localAI';
+import { AccountContext, request } from '../../services/account';
+import { findRelatedModels } from '../../services/localAI';
 import type {
   ChatMessage,
   CurriculumSubject,
@@ -181,13 +173,12 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
   const [input, setInput] = useState('');
   const [level, setLevel] = useState<SupportLevel>(2);
   const [subjectFilter, setSubjectFilter] = useState<CurriculumSubject | 'ALL'>('ALL');
-  const [aiStatus, setAiStatus] = useState<LocalAIStatus>(() =>
-    localAIService.getStatus(),
-  );
+  const account = useContext(AccountContext);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [sending, setSending] = useState(false);
 
   const [attachedFileName, setAttachedFileName] = useState<string>('');
-  const [attachedText, setAttachedText] = useState<string>('');
+  const [fileId, setFileId] = useState<string>('');
   const [extractingFile, setExtractingFile] = useState(false);
   const [fileError, setFileError] = useState<string>('');
 
@@ -195,13 +186,14 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
   const messageListRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    loadChatHistory()
-      .then((hist) => {
-        if (hist.length > 0) {
-          setMessages(hist);
-        }
-      })
-      .catch(() => {});
+    let active = true;
+    request('chat').then(rows => {
+      if (active) setMessages(rows.map((row: { id: string; role: ChatMessage['role']; content: string; created_at: string }) => ({
+        id: row.id, role: row.role, content: row.content, timestamp: Date.parse(row.created_at), level: 2,
+      })));
+    }).catch(err => { if (active) setFileError(err.message); })
+      .finally(() => { if (active) setLoadingHistory(false); });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -210,31 +202,24 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const handleInitWebLLM = async () => {
-    const next = await localAIService.initLocalModel((s) => setAiStatus(s));
-    setAiStatus(next);
-  };
-
   const handleFileUpload = async (file: File) => {
     setExtractingFile(true);
     setFileError('');
-    const result = await extractTextFromFile(file);
-    setExtractingFile(false);
-    if (result.error && !result.text) {
-      setFileError(result.error);
-      return;
-    }
-    setAttachedFileName(result.fileName);
-    setAttachedText(result.text);
-    if (result.error) {
-      setFileError(result.error);
-    }
+    try {
+      const form = new FormData();
+      form.set('file', file);
+      const data = await request('files', form);
+      if (!data.id) throw new Error('Chưa tải được tệp.');
+      setFileId(data.id);
+      setAttachedFileName(file.name);
+    } catch (err) { setFileError(err instanceof Error ? err.message : 'Chưa tải được tệp.'); }
+    finally { setExtractingFile(false); }
   };
 
   const handleSend = async (customText?: string) => {
-    if (sending || clearing || extractingFile) return;
+    if (loadingHistory || sending || clearing || extractingFile) return;
     const text = (customText ?? input).trim();
-    if (!text && !attachedText) return;
+    if (!text && !fileId) return;
     const query = text || `Hãy phân tích nội dung tệp ${attachedFileName} giúp em.`;
 
     const userMsg: ChatMessage = {
@@ -250,43 +235,43 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     setMessages(nextHistory);
     setInput('');
     setSending(true);
-    saveChatMessage(userMsg).catch(() => {});
-
+    setFileError('');
     try {
-    const reply = await localAIService.generateReply(
-      query,
-      level,
-      nextHistory,
-      attachedText || undefined,
-      subjectFilter,
-    );
-
-    const botMsg: ChatMessage = {
-      id: `msg-a-${Date.now() + 1}`,
-      role: 'assistant',
-      content: reply.content,
-      level,
-      timestamp: Date.now() + 1,
-      engineUsed: reply.engineUsed,
-      limitationNotice: reply.limitationNotice,
-      relatedModels: reply.relatedModels,
-    };
-
-    setMessages((prev) => [...prev, botMsg]);
-
-    setAttachedFileName('');
-    setAttachedText('');
-    saveChatMessage(botMsg).catch(() => {});
-    } catch { setFileError("Chưa nhận được phản hồi. Vui lòng thử lại."); } finally { setSending(false); }
+      const data = await request('chat', {
+        message: query, grade: account?.grade || 11,
+        subject: subjectFilter === 'ALL' ? 'Tự động' : subjectFilter,
+        level, file_id: fileId || null,
+      });
+      if (!data.reply) throw new Error('Chưa nhận được phản hồi từ Gemini.');
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.reply,
+        level, timestamp: Date.now(), relatedModels: findRelatedModels(query, 4, subjectFilter) }]);
+      setAttachedFileName('');
+      setFileId('');
+    } catch (err) {
+      setMessages(prev => prev.filter(msg => msg.id !== userMsg.id));
+      setInput(text);
+      setFileError(err instanceof Error ? err.message : 'Chưa nhận được phản hồi.');
+    } finally { setSending(false); }
   };
+
+  function downloadConversation() {
+    const text = messages.map(msg => (msg.role === 'user' ? 'Bạn' : 'Trợ lý') + ': ' + msg.content).join('\n\n');
+    const url = URL.createObjectURL(new Blob([text], {type: 'text/plain;charset=utf-8'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'EduMind-hoi-thoai.txt';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   const [clearing, setClearing] = useState(false);
   const handleClear = async () => {
     setClearing(true);
     try {
-    await clearChatHistory().catch(() => {});
+    const response = await fetch('/api/chat', {method: 'DELETE', headers: {'X-Requested-With':'XMLHttpRequest'}});
+    if (!response.ok) throw new Error();
     setMessages([]);
-    } finally { setClearing(false); }
+    } catch { setFileError('Chưa xóa được hội thoại.'); } finally { setClearing(false); }
   };
 
   const levelCardTheme = (lvl: SupportLevel, active: boolean) => {
@@ -309,55 +294,6 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* Left Unified Colorful Configuration Panel (4 cols) */}
       <div className="lg:col-span-4 rounded-2xl border border-violet-200/80 bg-white/95 shadow-[0_6px_28px_rgba(124,58,237,0.07)] divide-y divide-violet-100 overflow-hidden">
-        {/* Local Model / WebGPU Status */}
-        <div className="p-4 space-y-2.5 bg-gradient-to-br from-violet-50/70 via-white to-sky-50/60">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-2">
-              <span className="w-7 h-7 rounded-xl bg-gradient-to-br from-violet-600 to-sky-500 text-white inline-flex items-center justify-center shadow-xs">
-                <Cpu className="w-4 h-4" />
-              </span>
-              Mô hình AI cục bộ (WebLLM)
-            </h3>
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-indigo-100/90 text-indigo-800 whitespace-nowrap">
-              {aiStatus.modelReady
-                ? 'Đã sẵn sàng'
-                : aiStatus.webGpuSupported
-                  ? 'Hỗ trợ WebGPU'
-                  : 'Chế độ tra cứu'}
-            </span>
-          </div>
-
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Không dùng API key trực tuyến hay gửi bài lên máy chủ ngoài. Khi chưa tải mô hình WebLLM, hệ thống dùng{' '}
-            <strong className="text-violet-900">tra cứu kiến thức có cấu trúc</strong> và nêu rõ giới hạn.
-          </p>
-
-          {aiStatus.webGpuSupported && !aiStatus.modelReady && (
-            <button
-              type="button"
-              aria-busy={aiStatus.modelLoading} disabled={aiStatus.modelLoading}
-              onClick={handleInitWebLLM}
-              className="w-full py-2.5 px-3 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 text-white hover:brightness-110 transition-all disabled:opacity-50 shadow-sm shadow-indigo-500/25"
-            >
-              {aiStatus.modelLoading
-                ? 'Đang nạp mô hình WebGPU...'
-                : 'Tải & kích hoạt WebLLM cục bộ (~900MB)'}
-            </button>
-          )}
-
-          {aiStatus.loadProgressText && (
-            <div className="text-[11px] font-medium text-sky-900 bg-sky-50 border border-sky-200 rounded-xl p-2.5">
-              {aiStatus.loadProgressText}
-            </div>
-          )}
-
-          {aiStatus.error && (
-            <div className="text-[11px] font-medium text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
-              {aiStatus.error}
-            </div>
-          )}
-        </div>
-
         {/* 3 Color-Coded Support Levels */}
         <div className="p-4 space-y-2">
           <h3 className="text-xs font-bold text-violet-800">Chọn mức độ hỗ trợ sư phạm</h3>
@@ -416,7 +352,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
               <button
                 key={idx}
                 type="button"
-                disabled={sending || clearing || extractingFile} onClick={() => handleSend(q)}
+                disabled={loadingHistory || sending || clearing || extractingFile} onClick={() => handleSend(q)}
                 className="w-full text-left text-xs font-medium text-slate-700 hover:text-indigo-900 hover:bg-gradient-to-r hover:from-violet-50 hover:to-sky-50 p-2.5 rounded-xl border border-violet-100/90 transition-colors leading-relaxed"
               >
                 {q}
@@ -438,12 +374,11 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
                 Trợ lý hướng dẫn học tập (Lớp 1 – 12)
               </h2>
               <div className="text-xs font-medium text-indigo-700 mt-0.5">
-                {aiStatus.modelReady
-                  ? `Đang dùng: WebLLM cục bộ (${aiStatus.activeModelId})`
-                  : 'Đang dùng: Tra cứu kiến thức có cấu trúc (ngoại tuyến)'}
+                Gemini · {loadingHistory ? 'Đang mở hội thoại…' : sending ? 'Đang trả lời…' : 'Tự động lưu vào tài khoản'}
               </div>
             </div>
           </div>
+          <button type="button" onClick={downloadConversation} disabled={!messages.length || sending || clearing} className="inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-bold" title="Tải bản sao .txt"><Download size={15}/>Lưu hội thoại (.txt)</button>
           {messages.length > 0 && (
             <button
               type="button"
@@ -534,18 +469,18 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
           {(attachedFileName || fileError || extractingFile) && (
             <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-xs">
               <span className="text-sky-900 font-medium">
-                {extractingFile
-                  ? 'Đang trích xuất nội dung tệp...'
+                {fileError || (extractingFile
+                  ? 'Đang tải tệp…'
                   : attachedFileName
-                    ? `Đã trích xuất: ${attachedFileName} (${attachedText.length} ký tự)`
-                    : fileError}
+                    ? `Đã đính kèm: ${attachedFileName}`
+                    : '')}
               </span>
               {attachedFileName && (
                 <button
                   type="button"
                   onClick={() => {
                     setAttachedFileName('');
-                    setAttachedText('');
+                    setFileId('');
                   }}
                   className="text-rose-600 font-bold hover:underline"
                 >
@@ -590,7 +525,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
             />
             <button
               type="button"
-              aria-busy={sending} disabled={sending || clearing || extractingFile}
+              aria-busy={sending} disabled={loadingHistory || sending || clearing || extractingFile}
               onClick={() => handleSend()}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-sky-600 text-white text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50 shrink-0 shadow-sm shadow-indigo-500/25"
             >

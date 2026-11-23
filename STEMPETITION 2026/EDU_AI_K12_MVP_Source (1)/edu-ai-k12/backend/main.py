@@ -49,6 +49,7 @@ class Login(BaseModel):
     password: str
 
 class ChatIn(BaseModel):
+    level: int | None = Field(default=None, ge=1, le=3)
     message: str = Field(default='', max_length=5000)
     grade: int = Field(default=11, ge=1, le=12)
     subject: str = Field(default='Tự động', max_length=80)
@@ -298,7 +299,11 @@ async def chat(data: ChatIn, request: Request):
             parts.append({'text':f'Tệp: {attachment["filename"]}. Nội dung trích xuất:\n{attachment["extracted"] or "Không trích xuất được."}'})
     hist = [(row['role'],row['content']) for row in reversed(old)]
     if config.GEMINI_API_KEY: check_ai_quota(user['id'],'chat',8)
-    reply = await generate(parts, TUTOR_INSTRUCTION, hist)
+    instruction = TUTOR_INSTRUCTION
+    if data.level:
+        guidance = {1: 'Gợi ý kiến thức liên quan.', 2: 'Hướng dẫn phương pháp giải.', 3: 'Phân tích từng bước.'}
+        instruction += ' Khi phù hợp, ' + guidance[data.level] + ' Nếu câu hỏi chưa rõ, hỏi lại ngắn gọn theo ngữ cảnh.'
+    reply = await generate(parts, instruction, hist)
     shown_message = data.message.strip() or f'[Đã gửi tệp {attachment["filename"]}]'
     with connection() as db:
         db.execute('INSERT INTO chat_messages(id,user_id,role,content) VALUES (?,?,?,?)',(uid(),user['id'],'user',shown_message))
@@ -694,6 +699,7 @@ def spa_fallback(path: str):
     if path.startswith('api/'):
         raise HTTPException(404,'API không tồn tại.')
     return FileResponse(FRONTEND / 'index.html')
+
 
 
 
