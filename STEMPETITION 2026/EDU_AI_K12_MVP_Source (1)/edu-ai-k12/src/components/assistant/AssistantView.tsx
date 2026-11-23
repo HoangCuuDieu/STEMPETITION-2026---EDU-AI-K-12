@@ -232,6 +232,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
   };
 
   const handleSend = async (customText?: string) => {
+    if (sending || clearing || extractingFile) return;
     const text = (customText ?? input).trim();
     if (!text && !attachedText) return;
     const query = text || `Hãy phân tích nội dung tệp ${attachedFileName} giúp em.`;
@@ -251,6 +252,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     setSending(true);
     saveChatMessage(userMsg).catch(() => {});
 
+    try {
     const reply = await localAIService.generateReply(
       query,
       level,
@@ -271,15 +273,20 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     };
 
     setMessages((prev) => [...prev, botMsg]);
-    setSending(false);
+
     setAttachedFileName('');
     setAttachedText('');
     saveChatMessage(botMsg).catch(() => {});
+    } catch { setFileError("Chưa nhận được phản hồi. Vui lòng thử lại."); } finally { setSending(false); }
   };
 
+  const [clearing, setClearing] = useState(false);
   const handleClear = async () => {
+    setClearing(true);
+    try {
     await clearChatHistory().catch(() => {});
     setMessages([]);
+    } finally { setClearing(false); }
   };
 
   const levelCardTheme = (lvl: SupportLevel, active: boolean) => {
@@ -328,7 +335,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
           {aiStatus.webGpuSupported && !aiStatus.modelReady && (
             <button
               type="button"
-              disabled={aiStatus.modelLoading}
+              aria-busy={aiStatus.modelLoading} disabled={aiStatus.modelLoading}
               onClick={handleInitWebLLM}
               className="w-full py-2.5 px-3 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 text-white hover:brightness-110 transition-all disabled:opacity-50 shadow-sm shadow-indigo-500/25"
             >
@@ -409,7 +416,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
               <button
                 key={idx}
                 type="button"
-                onClick={() => handleSend(q)}
+                disabled={sending || clearing || extractingFile} onClick={() => handleSend(q)}
                 className="w-full text-left text-xs font-medium text-slate-700 hover:text-indigo-900 hover:bg-gradient-to-r hover:from-violet-50 hover:to-sky-50 p-2.5 rounded-xl border border-violet-100/90 transition-colors leading-relaxed"
               >
                 {q}
@@ -440,7 +447,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
           {messages.length > 0 && (
             <button
               type="button"
-              onClick={handleClear}
+              disabled={clearing || sending} aria-busy={clearing} onClick={handleClear}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-white hover:bg-rose-50 rounded-xl border border-rose-200 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -562,7 +569,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
             />
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              disabled={extractingFile} aria-busy={extractingFile} onClick={() => fileInputRef.current?.click()}
               className="p-2.5 rounded-xl border border-violet-200 bg-white text-violet-700 hover:bg-violet-50 transition-colors shrink-0"
               title="Tải tệp PDF, DOCX, PPTX, XLSX, TXT hoặc ảnh"
             >
@@ -583,7 +590,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
             />
             <button
               type="button"
-              disabled={sending}
+              aria-busy={sending} disabled={sending || clearing || extractingFile}
               onClick={() => handleSend()}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-sky-600 text-white text-sm font-bold hover:brightness-110 transition-all disabled:opacity-50 shrink-0 shadow-sm shadow-indigo-500/25"
             >

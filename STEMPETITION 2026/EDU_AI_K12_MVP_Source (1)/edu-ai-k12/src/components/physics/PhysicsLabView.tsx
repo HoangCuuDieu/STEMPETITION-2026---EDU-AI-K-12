@@ -32,6 +32,9 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   const [groupFilter, setGroupFilter] = useState<string>('ALL');
   const [gradeFilter, setGradeFilter] = useState<string>('ALL');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [savingFavorite, setSavingFavorite] = useState(false);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
+  const [favoriteError, setFavoriteError] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const [activeSim, setActiveSim] = useState<PhysicsSimulationSpec | null>(null);
@@ -59,7 +62,8 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   useEffect(() => {
     getFavoritesByDomain('physics')
       .then(setFavorites)
-      .catch(() => setFavorites([]));
+      .catch(() => setFavoriteError('Chưa tải được danh sách yêu thích.'))
+      .finally(() => setLoadingFavorites(false));
   }, []);
 
   useEffect(() => {
@@ -160,8 +164,9 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   useEffect(() => {
     if (!activeSim) return;
     let rafId = 0;
+    let lastPanelUpdate = -Infinity;
 
-    const renderAtTime = (t: number) => {
+    const renderAtTime = (t: number, now: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -174,11 +179,15 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
         paramValues,
         historyRef.current,
       );
-      setSimResult(res);
-      drawGraphCanvas(res);
+      if (now - lastPanelUpdate >= 100) {
+        lastPanelUpdate = now;
+        setSimTime(t);
+        setSimResult(res);
+        drawGraphCanvas(res);
+      }
     };
 
-    renderAtTime(simTimeRef.current);
+    renderAtTime(simTimeRef.current, performance.now());
 
     if (!activeSim.isTimeDependent || !isPlaying) {
       lastFrameRef.current = null;
@@ -192,8 +201,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
       const dt = Math.min(0.05, (now - lastFrameRef.current) / 1000);
       lastFrameRef.current = now;
       simTimeRef.current += dt;
-      setSimTime(simTimeRef.current);
-      renderAtTime(simTimeRef.current);
+      renderAtTime(simTimeRef.current, now);
       rafId = window.requestAnimationFrame(tick);
     };
 
@@ -231,10 +239,17 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   };
 
   const handleToggleFavorite = async (id: string) => {
-    const nextState = await toggleFavorite(id, 'physics', !favorites.includes(id));
-    setFavorites((prev) =>
-      nextState ? [...new Set([...prev, id])] : prev.filter((f) => f !== id),
-    );
+    if (savingFavorite || loadingFavorites) return;
+    setSavingFavorite(true);
+    setFavoriteError('');
+    try {
+      const saved = await toggleFavorite(id, 'physics', !favorites.includes(id));
+      setFavorites(prev => saved ? [...new Set([...prev, id])] : prev.filter(item => item !== id));
+    } catch {
+      setFavoriteError('Chưa lưu được thay đổi. Vui lòng thử lại.');
+    } finally {
+      setSavingFavorite(false);
+    }
   };
 
   const handleFullscreen = () => {
@@ -302,6 +317,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
 
   return (
     <div className="space-y-6">
+      {favoriteError && <p role="alert" className="text-sm text-red-700">{favoriteError}</p>}
       {/* Active Simulation Observatory Workbench */}
       <div
         ref={stageRef}
@@ -353,6 +369,8 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
             {activeSim && (
               <button
                 type="button"
+                disabled={savingFavorite || loadingFavorites}
+                aria-busy={savingFavorite || loadingFavorites}
                 onClick={() => handleToggleFavorite(activeSim.id)}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-colors ${
                   isFav
@@ -361,7 +379,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
                 }`}
               >
                 <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-500 text-amber-500' : 'text-amber-500'}`} />
-                {isFav ? 'Đã lưu' : 'Yêu thích'}
+                {savingFavorite ? (isFav ? 'Đang bỏ lưu…' : 'Đang lưu…') : isFav ? 'Đã lưu' : 'Yêu thích'}
               </button>
             )}
             <button

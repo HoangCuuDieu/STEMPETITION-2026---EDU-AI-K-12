@@ -89,9 +89,11 @@ export default function App() {
 
 function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
   const [logoutError, setLogoutError] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
   async function logout() {
+    setLoggingOut(true);
     try { await request('auth/logout', {}); onLogout(); }
-    catch { setLogoutError('Đăng xuất chưa thành công. Vui lòng thử lại.'); }
+    catch { setLogoutError('Đăng xuất chưa thành công. Vui lòng thử lại.'); setLoggingOut(false); }
   }
   const [activeTab, setActiveTab] = useState<AppTab>('lab');
   const [labDomain, setLabDomain] = useState<LabDomain>('physics');
@@ -172,7 +174,7 @@ function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
           <details className="relative min-w-0 text-center text-sm" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.open = false; }} onKeyDown={e => { if (e.key === 'Escape') { e.currentTarget.open = false; e.currentTarget.querySelector('summary')?.focus(); } }}>
             <summary title={user.name} className="block max-w-32 truncate cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold">{user.name}</summary>
             <div className="absolute inset-x-0 top-full mt-1">
-              <button onClick={logout} className="w-full rounded-xl border border-slate-200 bg-white py-2 shadow">Đăng xuất</button>
+              <button disabled={loggingOut} aria-busy={loggingOut} onClick={logout} className="w-full rounded-xl border border-slate-200 bg-white py-2 shadow">Đăng xuất</button>
             </div>
           </details>
           </div>

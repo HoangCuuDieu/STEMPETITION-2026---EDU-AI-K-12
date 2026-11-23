@@ -1,5 +1,6 @@
 """Authentication and role checks. Teacher self-signup requires server invite code."""
 import hashlib
+from contextlib import nullcontext
 import hmac
 import secrets
 import time
@@ -42,11 +43,11 @@ def new_session(user_id):
                    (session_digest(token), user_id, int(time.time())+SESSION_SECONDS))
     return token
 
-def user_for_request(request: Request):
+def user_for_request(request: Request, db=None):
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         raise HTTPException(401, 'Bạn cần đăng nhập.')
-    with connection() as db:
+    with (connection() if db is None else nullcontext(db)) as db:
         user = db.execute('''SELECT u.id,u.name,u.email,u.role,u.grade
             FROM users u JOIN sessions s ON u.id=s.user_id
             WHERE s.token_hash=? AND s.expires_at>?''',
@@ -58,3 +59,4 @@ def user_for_request(request: Request):
 def require_role(user, role):
     if user['role'] != role:
         raise HTTPException(403, 'Bạn không có quyền thực hiện thao tác này.')
+

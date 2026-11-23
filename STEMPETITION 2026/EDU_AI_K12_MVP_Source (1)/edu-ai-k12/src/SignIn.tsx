@@ -33,7 +33,7 @@ export function SignIn({ onLogin, checking }: { onLogin: (user: Account) => void
           <label>Email<input className={field} name="email" type="email" required autoComplete="email"/></label>
           <label>Mật khẩu<input className={field} name="password" type="password" required minLength={register ? 10 : 1} autoComplete={register ? 'new-password' : 'current-password'}/></label>
           {register && <label>Khối lớp<input className={field} name="grade" type="number" min="1" max="12" defaultValue="11" required/></label>}
-          <button className="rounded-xl bg-gradient-to-r from-blue-700 to-emerald-700 p-3 font-semibold text-white">{checking ? 'Đang kiểm tra phiên…' : busy ? 'Đang xử lý…' : register ? 'Đăng ký' : 'Đăng nhập'}</button>
+          <button aria-busy={busy || checking} disabled={busy || checking} className="rounded-xl bg-gradient-to-r from-blue-700 to-emerald-700 p-3 font-semibold text-white">{checking ? 'Đang kiểm tra phiên…' : busy ? 'Đang xử lý…' : register ? 'Đăng ký' : 'Đăng nhập'}</button>
           <button type="button" className="text-sky-800" onClick={() => {setRegister(!register); setError('');}}>{register ? 'Quay lại đăng nhập' : 'Tạo tài khoản mới'}</button>
         </fieldset>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

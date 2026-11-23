@@ -49,7 +49,7 @@ export function GeminiGrading() {
           <label>Môn học<input name="subject" defaultValue="Tự động" /></label>
 
         <label>Khối lớp<input type="number" name="grade" min="1" max="12" defaultValue={user?.grade || 11} required /></label>
-        <button className="rounded-lg bg-indigo-600 text-white p-2">{busy ? 'Đang xử lý…' : 'Chấm bằng Gemini'}</button>
+        <button aria-busy={busy} disabled={busy} className="rounded-lg bg-indigo-600 text-white p-2">{busy ? 'Đang xử lý…' : 'Chấm bằng Gemini'}</button>
       </fieldset>
     </form>
     {error && <p role="alert">{error}</p>}

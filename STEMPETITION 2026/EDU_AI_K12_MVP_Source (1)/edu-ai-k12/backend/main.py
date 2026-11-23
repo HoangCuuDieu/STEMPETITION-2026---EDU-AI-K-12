@@ -601,8 +601,8 @@ FavoriteDomain = Literal['physics', 'chemistry']
 
 @app.get('/api/favorites/{domain}')
 def list_favorites(domain: FavoriteDomain, request: Request):
-    owner = user_for_request(request)['id']
     with connection() as db:
+        owner = user_for_request(request, db)['id']
         rows = db.execute('SELECT item_id FROM favorites WHERE owner_id=? AND domain=? ORDER BY item_id',
                           (owner, domain)).fetchall()
     return [row['item_id'] for row in rows]
@@ -610,10 +610,10 @@ def list_favorites(domain: FavoriteDomain, request: Request):
 @app.put('/api/favorites/{domain}/{item_id}')
 @app.delete('/api/favorites/{domain}/{item_id}')
 def set_favorite(domain: FavoriteDomain, item_id: str, request: Request):
-    owner = user_for_request(request)['id']
     if len(item_id) > 100:
         raise HTTPException(422, 'Mã mô hình quá dài.')
     with connection() as db:
+        owner = user_for_request(request, db)['id']
         params = (owner, domain, item_id)
         if request.method == 'PUT':
             db.execute('INSERT INTO favorites(owner_id,domain,item_id) VALUES (?,?,?) ON CONFLICT DO NOTHING', params)
@@ -694,5 +694,6 @@ def spa_fallback(path: str):
     if path.startswith('api/'):
         raise HTTPException(404,'API không tồn tại.')
     return FileResponse(FRONTEND / 'index.html')
+
 
 

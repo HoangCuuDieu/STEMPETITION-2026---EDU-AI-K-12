@@ -37,6 +37,9 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | ChemistryCategory>('ALL');
   const [structureFilter, setStructureFilter] = useState<'ALL' | ChemistryStructureType>('ALL');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [savingFavorite, setSavingFavorite] = useState(false);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
+  const [favoriteError, setFavoriteError] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const [activeModel, setActiveModel] = useState<ChemicalModel | null>(null);
@@ -54,7 +57,8 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
   useEffect(() => {
     getFavoritesByDomain('chemistry')
       .then(setFavorites)
-      .catch(() => setFavorites([]));
+      .catch(() => setFavoriteError('Chưa tải được danh sách yêu thích.'))
+      .finally(() => setLoadingFavorites(false));
   }, []);
 
   useEffect(() => {
@@ -98,10 +102,17 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
   }, [search, categoryFilter, structureFilter, onlyFavorites, favorites]);
 
   const handleToggleFavorite = async (id: string) => {
-    const next = await toggleFavorite(id, 'chemistry', !favorites.includes(id));
-    setFavorites((prev) =>
-      next ? [...new Set([...prev, id])] : prev.filter((f) => f !== id),
-    );
+    if (savingFavorite || loadingFavorites) return;
+    setSavingFavorite(true);
+    setFavoriteError('');
+    try {
+      const saved = await toggleFavorite(id, 'chemistry', !favorites.includes(id));
+      setFavorites(prev => saved ? [...new Set([...prev, id])] : prev.filter(item => item !== id));
+    } catch {
+      setFavoriteError('Chưa lưu được thay đổi. Vui lòng thử lại.');
+    } finally {
+      setSavingFavorite(false);
+    }
   };
 
   const isFav = activeModel ? favorites.includes(activeModel.id) : false;
@@ -114,6 +125,7 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
 
   return (
     <div className="space-y-6">
+      {favoriteError && <p role="alert" className="text-sm text-red-700">{favoriteError}</p>}
       {/* Active 3D Chemical Structure Workspace */}
       <div
         ref={viewerTopRef}
@@ -146,7 +158,9 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
           {activeModel && (
             <button
               type="button"
-              onClick={() => handleToggleFavorite(activeModel.id)}
+              disabled={savingFavorite || loadingFavorites}
+                aria-busy={savingFavorite || loadingFavorites}
+                onClick={() => handleToggleFavorite(activeModel.id)}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-colors ${
                 isFav
                   ? 'bg-amber-100 border-amber-300 text-amber-900 shadow-xs'
@@ -154,7 +168,7 @@ export function ChemistryLabView({ initialModelId }: ChemistryLabViewProps) {
               }`}
             >
               <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-500 text-amber-500' : 'text-amber-500'}`} />
-              {isFav ? 'Đã lưu' : 'Yêu thích'}
+              {savingFavorite ? (isFav ? 'Đang bỏ lưu…' : 'Đang lưu…') : isFav ? 'Đã lưu' : 'Yêu thích'}
             </button>
           )}
         </div>

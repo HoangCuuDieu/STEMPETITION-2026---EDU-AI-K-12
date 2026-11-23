@@ -59,17 +59,19 @@ function LocalGradingView() {
       .catch(() => {});
   }, []);
 
+  const [readingRubric, setReadingRubric] = useState(false);
+  const [saving, setSaving] = useState(false);
   const handleUploadWork = async (file: File) => {
     setExtracting(true);
-    const res = await extractTextFromFile(file);
-    setExtracting(false);
+    const res = await extractTextFromFile(file).finally(() => setExtracting(false));
     setFileName(res.fileName);
     setStudentText(res.text);
     setOcrConfidence(res.confidence);
   };
 
   const handleUploadRubric = async (file: File) => {
-    const res = await extractTextFromFile(file);
+    setReadingRubric(true);
+    const res = await extractTextFromFile(file).finally(() => setReadingRubric(false));
     if (res.text) {
       setRubricText(res.text);
     }
@@ -113,9 +115,12 @@ function LocalGradingView() {
 
   const handleSaveResult = async () => {
     if (!result) return;
+    setSaving(true);
+    try {
     await saveGradingRecord(result);
     const updated = await loadGradingRecords();
     setHistory(updated);
+    } finally { setSaving(false); }
   };
 
   const totalTeacherScore =
@@ -211,7 +216,7 @@ function LocalGradingView() {
                 />
                 <button
                   type="button"
-                  onClick={() => workFileRef.current?.click()}
+                  disabled={extracting} aria-busy={extracting} onClick={() => workFileRef.current?.click()}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-indigo-200 bg-indigo-50/70 text-indigo-800 hover:bg-indigo-100 transition-colors whitespace-nowrap"
                 >
                   <FileUp className="w-3.5 h-3.5 text-indigo-600" />
@@ -255,7 +260,7 @@ function LocalGradingView() {
                   />
                   <button
                     type="button"
-                    onClick={() => rubricFileRef.current?.click()}
+                    disabled={readingRubric} aria-busy={readingRubric} onClick={() => rubricFileRef.current?.click()}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-amber-200 bg-amber-50/80 text-amber-900 hover:bg-amber-100 transition-colors whitespace-nowrap"
                   >
                     <FileUp className="w-3.5 h-3.5 text-amber-600" />
@@ -318,7 +323,7 @@ function LocalGradingView() {
                 </div>
                 <button
                   type="button"
-                  onClick={handleSaveResult}
+                  disabled={saving} aria-busy={saving} onClick={handleSaveResult}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-600 hover:text-white transition-colors whitespace-nowrap"
                 >
                   <Save className="w-3.5 h-3.5" />

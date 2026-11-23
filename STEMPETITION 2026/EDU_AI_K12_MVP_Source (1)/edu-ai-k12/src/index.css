@@ -115,3 +115,21 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
     animation-duration: 0.01ms !important;
   }
 }
+
+button:disabled { opacity: .58; cursor: wait; }
+button[aria-busy="true"]::before {
+  content: "";
+  display: inline-block;
+  vertical-align: -0.12em;
+  margin-inline-end: .35em;
+  width: .95em;
+  height: .95em;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: edumind-spin .75s linear infinite;
+}
+@keyframes edumind-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  button[aria-busy="true"]::before { animation-duration: 2s; }
+}
