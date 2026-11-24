@@ -175,6 +175,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
   const [subjectFilter, setSubjectFilter] = useState<CurriculumSubject | 'ALL'>('ALL');
   const account = useContext(AccountContext);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [sending, setSending] = useState(false);
 
   const [attachedFileName, setAttachedFileName] = useState<string>('');
@@ -241,7 +242,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
         message: query, grade: account?.grade || 11,
         subject: subjectFilter,
         level, file_id: fileId || null,
-      });
+      }, () => setRetrying(true));
       if (!data.reply) throw new Error('Chưa nhận được phản hồi từ Gemini.');
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.reply,
         level, timestamp: Date.now(), relatedModels: findRelatedModels(query, 4, subjectFilter) }]);
@@ -251,7 +252,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
       setMessages(prev => prev.filter(msg => msg.id !== userMsg.id));
       setInput(text);
       setFileError(err instanceof Error ? err.message : 'Chưa nhận được phản hồi.');
-    } finally { setSending(false); }
+    } finally { setRetrying(false); setSending(false); }
   };
 
   function downloadConversation() {
@@ -374,7 +375,7 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
                 Trợ lý hướng dẫn học tập (Lớp 1 – 12)
               </h2>
               <div className="text-xs font-medium text-indigo-700 mt-0.5">
-                Gemini · {loadingHistory ? 'Đang mở hội thoại…' : sending ? 'Đang trả lời…' : 'Tự động lưu vào tài khoản'}
+                Gemini · {loadingHistory ? 'Đang mở hội thoại…' : retrying ? 'Gemini tạm thời chưa sẵn sàng, đang thử lại…' : sending ? 'Đang trả lời…' : 'Tự động lưu vào tài khoản'}
               </div>
             </div>
           </div>
@@ -540,5 +541,6 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
     </div>
   );
 }
+
 
 

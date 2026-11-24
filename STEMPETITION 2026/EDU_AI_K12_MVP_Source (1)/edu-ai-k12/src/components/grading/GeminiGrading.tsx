@@ -11,6 +11,7 @@ async function upload(file: File) {
 
 export function GeminiGrading() {
   const user = useContext(AccountContext)!;
+  const [retrying, setRetrying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [report, setReport] = useState('');
@@ -32,12 +33,12 @@ export function GeminiGrading() {
         if (rubric?.size) grading.set('rubric_id', await upload(rubric));
         grading.set('grade', String(fields.get('grade')));
         grading.set('subject', String(fields.get('subject') || 'Tự động'));
-        const data = await request('grade', grading);
+        const data = await request('grade', grading, () => setRetrying(true));
         if (!data.report) throw new Error('Chưa nhận được báo cáo từ trợ lý AI.');
         setReport(data.report);
       }
     } catch (err) { setError(err instanceof Error ? err.message : 'Không kết nối được máy chủ.'); }
-    finally { setBusy(false); }
+    finally { setRetrying(false); setBusy(false); }
   }
 
   const uploadStyle = 'mt-2 block w-full min-w-0 rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 text-sm font-normal text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-100 file:px-3 file:py-2 file:font-semibold file:text-indigo-800';
@@ -69,7 +70,7 @@ export function GeminiGrading() {
           </section>
           <button aria-busy={busy} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 px-4 py-3 font-bold text-white shadow-sm hover:brightness-110">
             {!busy && <ClipboardCheck aria-hidden="true" size={18}/>}
-            {busy ? 'Đang chấm bài…' : 'Chấm bài bằng trợ lý AI'}
+            {retrying ? 'Gemini tạm thời chưa sẵn sàng, đang thử lại…' : busy ? 'Đang chấm bài…' : 'Chấm bài bằng trợ lý AI'}
           </button>
         </fieldset>
         {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
@@ -85,3 +86,4 @@ export function GeminiGrading() {
     </div>
   );
 }
+

@@ -39,10 +39,12 @@ async def generate(parts, system_instruction, history=None, json_mode=False):
         raise HTTPException(504, 'Gemini phản hồi quá chậm. Vui lòng thử lại.')
     except httpx.HTTPError:
         raise HTTPException(502, 'Không thể kết nối đến Gemini. Kiểm tra mạng máy chủ.')
+    if response.status_code == 503:
+        raise HTTPException(503, 'Gemini tạm thời chưa sẵn sàng. Vui lòng thử lại sau.', headers={'X-Gemini-Retry': '1'})
     if response.status_code != 200:
         messages = {400:'Yêu cầu Gemini không hợp lệ.', 401:'API key bị từ chối (401). Hãy kiểm tra hoặc tạo khóa mới.',
                     403:'Không có quyền dùng mô hình Gemini (403).', 404:'Mô hình Gemini chưa khả dụng; kiểm tra GEMINI_MODEL.',
-                    429:'Đã đạt giới hạn sử dụng Gemini (429).', 500:'Gemini đang gặp lỗi máy chủ.',503:'Gemini tạm thời không khả dụng.'}
+                    429:'Đã đạt giới hạn sử dụng Gemini (429).', 500:'Gemini đang gặp lỗi máy chủ.'}
         raise HTTPException(502, messages.get(response.status_code, f'Gemini trả lỗi HTTP {response.status_code}.'))
     data = response.json()
     chunks = [part.get('text','') for candidate in data.get('candidates', [])
@@ -66,3 +68,4 @@ def parse_json_response(text):
             except json.JSONDecodeError:
                 pass
     raise HTTPException(502, 'AI chưa trả về dữ liệu cấu trúc hợp lệ. Vui lòng thử lại.')
+
