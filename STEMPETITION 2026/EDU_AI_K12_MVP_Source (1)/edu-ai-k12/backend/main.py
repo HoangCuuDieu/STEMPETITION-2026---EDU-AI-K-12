@@ -49,6 +49,7 @@ class Login(BaseModel):
     password: str
 
 class ChatIn(BaseModel):
+    lesson_context: str = Field(default="", max_length=6000)
     level: int | None = Field(default=None, ge=1, le=3)
     message: str = Field(default='', max_length=5000)
     grade: int = Field(default=11, ge=1, le=12)
@@ -300,6 +301,8 @@ async def chat(data: ChatIn, request: Request):
                 raise HTTPException(404,'Không thấy tệp của bạn.')
             attachment = dict(file_row)
     parts = [{'text':f'Khối lớp: {data.grade}. {subject_context(data.subject)}\nCâu hỏi: {data.message.strip() or "Hãy phân tích tài liệu đính kèm."}'}]
+    if data.lesson_context:
+        parts.append({"text": "Tài liệu tham khảo từ Kho kiến thức cho câu hỏi hiện tại:\n" + data.lesson_context})
     if attachment:
         if attachment['kind']=='image':
             suffix = Path(attachment['filename']).suffix.lower()

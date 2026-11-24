@@ -1,3 +1,4 @@
+import type { KnowledgeEntry } from './types/assistant';
 import { SignIn } from './SignIn';
 import { AccountContext, request, type Account } from './services/account';
 import { useEffect, useState, type ComponentType } from 'react';
@@ -95,7 +96,10 @@ function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
     try { await request('auth/logout', {}); onLogout(); }
     catch { setLogoutError('Đăng xuất chưa thành công. Vui lòng thử lại.'); setLoggingOut(false); }
   }
+  const [lesson, setLesson] = useState<KnowledgeEntry | null>(null);
+  const [visitedAssistant, setVisitedAssistant] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>('lab');
+  useEffect(() => { if (activeTab === 'assistant') setVisitedAssistant(true); }, [activeTab]);
   const [labDomain, setLabDomain] = useState<LabDomain>('physics');
   const [selectedMathId, setSelectedMathId] = useState<string>('math-pyramid');
   const [selectedPhysicsId, setSelectedPhysicsId] = useState<string>('phys-05');
@@ -297,14 +301,14 @@ function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
           </div>
         )}
 
-        {activeTab === 'assistant' && (
-          <AssistantView onOpenModel={handleOpenModel} />
+        {(activeTab === 'assistant' || visitedAssistant) && (
+          <div hidden={activeTab !== 'assistant'}><AssistantView onOpenModel={handleOpenModel} lesson={lesson} onRemoveLesson={item => setLesson(current => current === item ? null : current)} /></div>
         )}
 
         {activeTab === 'grading' && <GradingView />}
 
         {activeTab === 'knowledge' && (
-          <KnowledgeBaseView onOpenModel={handleOpenModel} />
+          <KnowledgeBaseView onOpenModel={handleOpenModel} onAsk={item => { setLesson(item); setActiveTab('assistant'); }} />
         )}
 
         {activeTab === 'progress' && <ProgressView />}

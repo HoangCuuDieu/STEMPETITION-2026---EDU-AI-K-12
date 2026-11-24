@@ -4,7 +4,23 @@ import { KNOWLEDGE_BASE } from '../../data/knowledgeBase';
 import type { CurriculumSubject, InternalModelLink } from '../../types/assistant';
 import { KatexFormula } from '../common/KatexFormula';
 
+import type { KnowledgeEntry } from '../../types/assistant';
+
+function words(text: string) {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/đ/g, 'd').match(/[a-z0-9]+/g) ?? [];
+}
+
+function label(subject: CurriculumSubject) {
+  return subject === 'GDCD' ? 'Giáo dục kinh tế và pháp luật' : subject;
+}
+
+const index = new Map(KNOWLEDGE_BASE.map(item => [item.id, words([
+  label(item.subject), item.subject, item.grade, item.title, item.summary, item.methodHint,
+  item.stepScaffold, ...item.formulasLatex, ...item.keywords,
+].join(' '))]));
+
 interface KnowledgeBaseViewProps {
+  onAsk: (lesson: KnowledgeEntry) => void;
   onOpenModel: (link: InternalModelLink) => void;
 }
 
@@ -41,7 +57,7 @@ const ALL_SUBJECTS: CurriculumSubject[] = [
   'GDCD',
 ];
 
-export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
+export function KnowledgeBaseView({ onOpenModel, onAsk }: KnowledgeBaseViewProps) {
   const [search, setSearch] = useState('');
   const [subject, setSubject] = useState<'ALL' | CurriculumSubject>('ALL');
   const [gradeBucket, setGradeBucket] = useState<'ALL' | 'primary' | 'middle' | 'high'>('ALL');
@@ -51,17 +67,14 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
   const moreRef = useRef<HTMLButtonElement>(null);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = words(search);
     return KNOWLEDGE_BASE.filter((item) => {
       if (subject !== 'ALL' && item.subject !== subject) return false;
       if (gradeBucket === 'primary' && item.gradeNumber > 5) return false;
       if (gradeBucket === 'middle' && (item.gradeNumber < 6 || item.gradeNumber > 9)) return false;
       if (gradeBucket === 'high' && item.gradeNumber < 10) return false;
-      if (q) {
-        const hay = `${item.subject} ${item.grade} ${item.title} ${item.summary} ${item.keywords.join(' ')}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
+      const terms = index.get(item.id)!;
+      return q.every(word => terms.some(term => term.startsWith(word)));
     });
   }, [search, subject, gradeBucket]);
 
@@ -156,7 +169,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
           </span>
           <div>
             <h2 className="text-base font-extrabold text-slate-950">
-              Kho kiến thức chuẩn chương trình (Lớp 1 – 12)
+              Kho kiến thức (Lớp 1 – 12)
             </h2>
             <p className="text-xs font-medium text-teal-800 mt-0.5 tabular-nums">
               {filtered.length} chuyên đề trọng tâm thuộc 10 môn học kèm công thức & liên kết mô hình trực quan
@@ -185,7 +198,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
             <option value="ALL">Tất cả 10 môn</option>
             {ALL_SUBJECTS.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {label(s)}
               </option>
             ))}
           </select>
@@ -223,7 +236,7 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
                     <span
                       className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-lg border ${theme.kicker}`}
                     >
-                      {entry.subject} · {entry.grade}
+                      {label(entry.subject)} · {entry.grade}
                     </span>
                     <h3 className="text-base font-extrabold text-slate-950 leading-snug">
                       {entry.title}
@@ -251,14 +264,14 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
                       <InlineCodeText text={entry.methodHint} />
                     </div>
                     <div>
-                      <strong className="text-slate-900">Lộ trình từng bước:</strong>{' '}
+                      <strong className="text-slate-900">Ví dụ:</strong>{' '}
                       <InlineCodeText text={entry.stepScaffold} />
                     </div>
                   </div>
                 </div>
 
-                {entry.linkedModel && (
-                  <div className="pt-3 border-t border-slate-100 flex justify-end">
+                <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-2 justify-end">
+                  {entry.linkedModel && (
                     <button
                       type="button"
                       onClick={() => onOpenModel(entry.linkedModel!)}
@@ -267,8 +280,11 @@ export function KnowledgeBaseView({ onOpenModel }: KnowledgeBaseViewProps) {
                       <ExternalLink className="w-3.5 h-3.5" />
                       Mở {entry.linkedModel.label}
                     </button>
-                  </div>
-                )}
+                  )}
+                  <button type="button" onClick={() => onAsk(entry)} className="rounded-xl border border-teal-300 bg-white px-4 py-2 text-xs font-bold text-teal-800 hover:bg-teal-50">
+                    Hỏi trợ lý AI
+                  </button>
+                </div>
               </article>
             );
           })}

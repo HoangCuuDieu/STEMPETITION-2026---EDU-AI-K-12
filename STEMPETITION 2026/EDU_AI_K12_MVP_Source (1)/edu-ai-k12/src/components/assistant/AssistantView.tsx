@@ -1,3 +1,4 @@
+import type { KnowledgeEntry } from '../../types/assistant';
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
@@ -75,6 +76,8 @@ function RichMathText({ text, isUser = false }: { text: string; isUser?: boolean
 }
 
 interface AssistantViewProps {
+  lesson: KnowledgeEntry | null;
+  onRemoveLesson: (lesson: KnowledgeEntry) => void;
   onOpenModel: (link: InternalModelLink) => void;
 }
 
@@ -168,7 +171,7 @@ const QUICK_PROMPTS_BY_SUBJECT: Record<CurriculumSubject | 'ALL', string[]> = {
   ],
 };
 
-export function AssistantView({ onOpenModel }: AssistantViewProps) {
+export function AssistantView({ onOpenModel, lesson, onRemoveLesson }: AssistantViewProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [level, setLevel] = useState<SupportLevel>(2);
@@ -242,10 +245,13 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
         message: query, grade: account?.grade || 11,
         subject: subjectFilter,
         level, file_id: fileId || null,
+        lesson_context: lesson ? [lesson.title, lesson.grade, lesson.summary, ...lesson.formulasLatex,
+          lesson.methodHint, lesson.stepScaffold].join('\n') : '',
       }, () => setRetrying(true));
       if (!data.reply) throw new Error('Chưa nhận được phản hồi từ Gemini.');
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.reply,
         level, timestamp: Date.now(), relatedModels: findRelatedModels(query, 4, subjectFilter) }]);
+      if (lesson) onRemoveLesson(lesson);
       setAttachedFileName('');
       setFileId('');
     } catch (err) {
@@ -469,6 +475,10 @@ export function AssistantView({ onOpenModel }: AssistantViewProps) {
 
         {/* Composer Bar */}
         <div className="shrink-0 p-3.5 sm:p-4 border-t border-violet-100 bg-gradient-to-r from-violet-50/50 via-white to-sky-50/50 space-y-2">
+          {lesson && <div className="mb-2 flex items-center gap-2 text-sm text-teal-800">
+            <span>Chuyên đề đính kèm: {lesson.title}</span>
+            <button type="button" aria-label="Bỏ chuyên đề" disabled={sending} onClick={() => onRemoveLesson(lesson)}>×</button>
+          </div>}
           {(attachedFileName || fileError || extractingFile) && (
             <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-xs">
               <span className="text-sky-900 font-medium">
