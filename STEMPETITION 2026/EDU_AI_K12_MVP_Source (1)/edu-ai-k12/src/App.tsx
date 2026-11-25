@@ -1,3 +1,4 @@
+import { MATH_SOLIDS } from './utils/mathGeometry';
 import type { KnowledgeEntry } from './types/assistant';
 import { SignIn } from './SignIn';
 import { AccountContext, request, type Account } from './services/account';
@@ -236,7 +237,7 @@ function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
                   }`}
                 >
                   <Box className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                  Toán học 3D (4)
+                  Toán học 3D ({MATH_SOLIDS.length})
                 </button>
 
                 <button

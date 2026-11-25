@@ -460,7 +460,7 @@ function buildSmartNoMatchGuide(
   if (level === 1) {
     return (
       `${levelHeader(1, subjNote)}\n` +
-      `• Mình đã rà soát Kho kiến thức 10 môn (Lớp 1–12) và 154 mô hình 2D/3D nhưng câu hỏi hiện tại hơi ngắn hoặc chưa rõ từ khóa chuyên đề.\n` +
+      `• Mình đã rà soát Kho kiến thức 10 môn (Lớp 1–12) và ${MATH_SOLIDS.length + 150} mô hình 2D/3D nhưng câu hỏi hiện tại hơi ngắn hoặc chưa rõ từ khóa chuyên đề.\n` +
       `• Bạn hãy bổ sung tên khái niệm/công thức, lớp học hoặc dán đề bài đầy đủ (ví dụ: *"Giải phương trình x^2 - 5x + 6 = 0"*, *"Tính M của Ca(OH)2"*, *"12 thì tiếng Anh"*, *"Nguyên phân vs giảm phân"*).`
     );
   }

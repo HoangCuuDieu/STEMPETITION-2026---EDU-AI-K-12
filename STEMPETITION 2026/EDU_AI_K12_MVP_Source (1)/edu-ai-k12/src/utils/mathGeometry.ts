@@ -1,3 +1,4 @@
+import { extraSolids } from './solidPresets';
 export interface Point3D {
   id: string;
   label: string;
@@ -16,7 +17,8 @@ export interface Segment3D {
 }
 
 export interface SolidPreset {
-  id: 'math-pyramid' | 'math-prism' | 'math-cuboid' | 'math-tetrahedron';
+  id: string;
+  round?: {radius?:number;bottom?:number;top?:number;height?:number};
   name: string;
   subtitle: string;
   description: string;
@@ -32,7 +34,7 @@ export const MATH_SOLIDS: SolidPreset[] = [
     name: 'Hình chóp S.ABCD',
     subtitle: 'Chóp tứ giác đều đáy vuông cạnh a = 4, đường cao SO = 4.5',
     description:
-      'Hình chóp S.ABCD có đáy ABCD là hình vuông tâm O nằm trong mặt phẳng Oxy, đỉnh S nằm trên trục Oz sao cho SO vuông góc với đáy.',
+      'Hình chóp S.ABCD có đáy ABCD là hình vuông tâm O nằm trong mặt phẳng Oxz, đỉnh S nằm trên trục Oy sao cho SO vuông góc với đáy.',
     formulasLatex: [
       'V = \\frac{1}{3} S_{\\text{ABCD}} \\cdot SO = \\frac{1}{3} a^2 h',
       'SO \\perp (ABCD) \\Rightarrow \\widehat{(SB, (ABCD))} = \\widehat{SBO}',
@@ -107,7 +109,7 @@ export const MATH_SOLIDS: SolidPreset[] = [
     name: 'Hình hộp chữ nhật ABCD.A′B′C′D′',
     subtitle: 'Kích thước 4 × 3 × 3.5 với đường chéo không gian AC′',
     description:
-      'Mọi mặt bên đều là hình chữ nhật vuông góc với nhau từng đôi một; đường chéo không gian AC′ thỏa định lý Pythagore mở rộng.',
+      'Hai mặt kề nhau vuông góc; đường chéo không gian AC′ thỏa định lý Pythagore mở rộng.',
     formulasLatex: [
       'V = a \\cdot b \\cdot c, \\quad AC\' = \\sqrt{a^2 + b^2 + c^2}',
     ],
@@ -177,6 +179,7 @@ export const MATH_SOLIDS: SolidPreset[] = [
       ['A', 'D', 'B'],
     ],
   },
+  ...extraSolids,
 ];
 
 export function distanceBetween(p1: Point3D, p2: Point3D): number {

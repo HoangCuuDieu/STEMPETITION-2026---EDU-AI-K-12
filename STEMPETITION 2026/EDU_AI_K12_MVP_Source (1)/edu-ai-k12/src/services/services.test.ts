@@ -161,7 +161,7 @@ describe('LocalAI, Smart Grading & Math 3D Geometry pure logic', () => {
   });
 
   it('computes Math 3D solid presets, midpoints, distances, and angles accurately', () => {
-    assert.equal(MATH_SOLIDS.length, 4);
+    assert.equal(MATH_SOLIDS.length, 17);
     const p1 = { id: 'P1', label: 'P1', x: 0, y: 0, z: 0 };
     const p2 = { id: 'P2', label: 'P2', x: 3, y: 4, z: 0 };
     assert.equal(distanceBetween(p1, p2), 5);

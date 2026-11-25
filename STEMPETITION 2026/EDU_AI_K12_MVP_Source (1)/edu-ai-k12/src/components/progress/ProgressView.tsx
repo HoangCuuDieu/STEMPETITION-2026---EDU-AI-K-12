@@ -22,9 +22,9 @@ export function ProgressView() {
   const summaryMetrics = [
     {
       label: 'Tổng mô hình trực quan',
-      value: `${totalVisualModels} / 154`,
+      value: `${totalVisualModels} / 167`,
       sub: 'Đã kiểm định hình học & công thức',
-      pct: Math.min(100, Math.round((totalVisualModels / 154) * 100)),
+      pct: Math.min(100, Math.round((totalVisualModels / 167) * 100)),
       icon: Layers,
       cardClass: 'border-indigo-200/90 bg-gradient-to-br from-indigo-50 via-white to-sky-50/70',
       iconClass: 'bg-gradient-to-br from-indigo-600 to-sky-500 text-white',
@@ -33,9 +33,9 @@ export function ProgressView() {
     },
     {
       label: 'Hình học Toán 3D',
-      value: `${mathCount} / 4`,
+      value: `${mathCount} / 17`,
       sub: 'Khối đa diện tương tác dựng điểm',
-      pct: Math.min(100, Math.round((mathCount / 4) * 100)),
+      pct: Math.min(100, Math.round((mathCount / 17) * 100)),
       icon: Box,
       cardClass: 'border-violet-200/90 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50/60',
       iconClass: 'bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white',
@@ -69,9 +69,9 @@ export function ProgressView() {
   const rows = [
     {
       item: 'Hình học không gian Toán 3D',
-      detail: 'Hình chóp S.ABCD, Lăng trụ tam giác, Hình hộp chữ nhật, Tứ diện đều + thêm điểm/nối đoạn/đo góc',
+      detail: 'Đa diện, khối tròn xoay, phép dựng, thiết diện và đo lường',
       current: mathCount,
-      target: 4,
+      target: mathCount,
       unit: 'mô hình',
     },
     {
@@ -178,7 +178,7 @@ export function ProgressView() {
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 border border-emerald-200 text-xs font-bold text-emerald-900 tabular-nums">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            Tổng: {totalVisualModels} / 154 mô hình trực quan
+            Tổng: {totalVisualModels} / 167 mô hình trực quan
           </div>
         </div>
 
