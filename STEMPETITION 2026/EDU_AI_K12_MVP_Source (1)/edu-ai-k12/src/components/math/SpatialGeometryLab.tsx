@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Shapes, X } from "lucide-react";
+import { Plus, Shapes, X, Ruler } from "lucide-react";
 import { MATH_SOLIDS, type SolidPreset } from "../../utils/mathGeometry";
 import {
   V,
@@ -46,7 +46,7 @@ const field =
   "min-w-0 w-full rounded-lg border border-violet-200 bg-white px-2 py-2 text-sm";
 const card = "space-y-3 rounded-xl border border-violet-100 bg-white p-4";
 const submit =
-  "rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold";
+  "rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 py-2 text-sm font-semibold";
 const palette = [
   "#ffffff",
   "#cbd5e1",
@@ -99,6 +99,26 @@ function Workshop({ preset }: { preset: SolidPreset }) {
   const [mode, setMode] = useState([0, 0, 0]),
     [menu, setMenu] = useState(-1),
     [open, setOpen] = useState("");
+  useEffect(() => {
+    if (!open && menu < 0) return;
+    function outside(e: PointerEvent) {
+      const t = e.target as Element;
+      if (!t.closest("[data-geo-menu]")) setMenu(-1);
+      if (!t.closest("[data-geo-picker], [data-geo-stage]")) setOpen("");
+    }
+    function escape(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenu(-1);
+        setOpen("");
+      }
+    }
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open, menu]);
   const [values, setValues] = useState<Record<string, string>>({}),
     [bad, setBad] = useState(""),
     [errors, setErrors] = useState<Record<string, string>>({});
@@ -177,7 +197,7 @@ function Workshop({ preset }: { preset: SolidPreset }) {
   function picker(key: string, label: string) {
     const current = get(key);
     return (
-      <div key={key} className="relative min-w-0">
+      <div data-geo-picker key={key} className="relative min-w-0">
         <span className="text-xs text-slate-600">{label}</span>
         <button
           type="button"
@@ -224,7 +244,7 @@ function Workshop({ preset }: { preset: SolidPreset }) {
   }
   function header(g: number) {
     return (
-      <div className="relative">
+      <div data-geo-menu className="relative">
         <button
           className="flex items-center gap-2 text-left font-bold text-sm"
           aria-expanded={menu === g}
@@ -451,20 +471,32 @@ function Workshop({ preset }: { preset: SolidPreset }) {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(290px,2fr)] items-start">
       <div className="space-y-4 min-w-0 lg:sticky lg:top-24">
-        <GeometryStage
-          items={items}
-          skin={base.find((o) => o.curved) ?? null}
-          selected={selected}
-          pick={(i) => {
-            select(i?.id ?? "");
-            if (open && i) choose(open, i);
-            else if (!i) {
-              setOpen("");
-              setBad("");
+        <div data-geo-stage>
+          <GeometryStage
+            recolor={(color) =>
+              setItems((old) =>
+                old.map((i) => (i.id === selected ? { ...i, color } : i)),
+              )
             }
-          }}
-        />
-        <div className={card}>
+            items={items}
+            skin={base.find((o) => o.curved) ?? null}
+            selected={selected}
+            pick={(i) => {
+              select(i?.id ?? "");
+              if (open && i) choose(open, i);
+              else if (!i) {
+                setOpen("");
+                setBad("");
+              }
+            }}
+          />
+        </div>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-violet-50 via-white to-violet-50/70 !border-violet-200 shadow-sm"
+          }
+        >
           <h3 className="font-bold">{preset.name}</h3>
           {preset.description && (
             <p className="text-sm">{preset.description}</p>
@@ -480,7 +512,12 @@ function Workshop({ preset }: { preset: SolidPreset }) {
             <option key={c} value={c} />
           ))}
         </datalist>
-        <div className={card}>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-sky-50 via-white to-sky-50/70 !border-sky-200 shadow-sm"
+          }
+        >
           {header(0)}
           {pointFields(0)}
           <div className="grid grid-cols-2 gap-2">
@@ -497,7 +534,12 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           </div>
           {action(0, "Tạo điểm")}
         </div>
-        <div className={card}>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-violet-50 via-white to-violet-50/70 !border-violet-200 shadow-sm"
+          }
+        >
           <h3 className="font-bold text-sm">Thêm điểm theo tọa độ</h3>
           <div className="grid grid-cols-4 gap-1">
             {nm(1)}
@@ -519,13 +561,23 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           </div>
           {action(3, "Đặt điểm")}
         </div>
-        <div className={card}>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-amber-50 via-white to-amber-50/70 !border-amber-200 shadow-sm"
+          }
+        >
           {header(1)}
           {pointFields(1)}
           {color(0)}
           {action(1, "Nối các điểm")}
         </div>
-        <div className={card}>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-indigo-50 via-white to-indigo-50/70 !border-indigo-200 shadow-sm"
+          }
+        >
           {header(2)}
           <div className="grid grid-cols-2 gap-2">
             {picker("i0", mode[2] === 2 ? "Mặt cắt" : "Đối tượng 1")}
@@ -534,8 +586,18 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           {color(1)}
           {action(2, "Tìm giao")}
         </div>
-        <div className={card}>
-          <h3 className="font-bold text-sm">Đo khoảng cách & góc không gian</h3>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-emerald-50 via-white to-emerald-50/70 !border-emerald-200 shadow-sm"
+          }
+        >
+          <h3 className="flex items-center gap-2 font-bold text-sm">
+            <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 inline-flex items-center justify-center">
+              <Ruler className="w-3.5 h-3.5" />
+            </span>
+            Đo khoảng cách & góc không gian
+          </h3>
           <div className="grid grid-cols-3 gap-2">
             {picker("d0", "Điểm 1")}
             {picker("d1", "Đỉnh góc")}
@@ -558,9 +620,16 @@ function Workshop({ preset }: { preset: SolidPreset }) {
             </b>
           </div>
         </div>
-        <div className={card}>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-teal-50 via-white to-teal-50/70 !border-teal-200 shadow-sm"
+          }
+        >
           <h3 className="flex gap-2 items-center font-bold text-sm">
-            <Shapes size={17} />
+            <span className="w-6 h-6 rounded-lg bg-teal-100 text-teal-700 inline-flex items-center justify-center">
+              <Shapes size={15} />
+            </span>
             Đo diện tích & thể tích
           </h3>
           {picker("area", "Mặt hoặc khối")}
@@ -573,7 +642,12 @@ function Workshop({ preset }: { preset: SolidPreset }) {
             </div>
           )}
         </div>
-        <div className={card}>
+        <div
+          className={
+            card +
+            " bg-gradient-to-br from-purple-50 via-white to-purple-50/70 !border-purple-200 shadow-sm"
+          }
+        >
           <h3 className="font-bold text-sm">
             Bảng các đối tượng ({items.length})
           </h3>

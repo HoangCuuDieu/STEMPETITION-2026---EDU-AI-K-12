@@ -1,3 +1,4 @@
+import { Eye, EyeOff, RotateCcw, Palette } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { V, same, type Item } from "../../utils/construction";
 type P = { x: number; y: number; z: number };
@@ -40,10 +41,12 @@ export function GeometryStage({
   skin,
   selected,
   pick,
+  recolor,
 }: {
   items: Item[];
   skin: Item | null;
   selected: string;
+  recolor: (color: string) => void;
   pick: (i?: Item) => void;
 }) {
   const home = [0.74, 0.43, 52],
@@ -65,7 +68,7 @@ export function GeometryStage({
       setView(([a, b, z]) => [
         a,
         b,
-        Math.min(250, Math.max(4, z * Math.exp(-e.deltaY * 0.001))),
+        Math.min(3000, Math.max(4, z * Math.exp(-e.deltaY * 0.001))),
       ]);
     }
     el.addEventListener("wheel", wheel, { passive: false });
@@ -121,6 +124,7 @@ export function GeometryStage({
         return { item, a, b, spans };
       });
     return {
+      project,
       drawn,
       lines,
       points: items
@@ -152,7 +156,10 @@ export function GeometryStage({
         }
       : { [property]: color };
   return (
-    <div className="relative rounded-2xl bg-slate-950 overflow-hidden">
+    <div
+      onDragStart={(e) => e.preventDefault()}
+      className="select-none relative rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 overflow-hidden"
+    >
       <style>
         {
           "@keyframes geometry-hue{0%,100%{color:#ff668a}17%{color:#ffbb45}34%{color:#99e85b}50%{color:#35ded5}67%{color:#679aff}84%{color:#de77ff}}"
@@ -200,6 +207,18 @@ export function GeometryStage({
           start.current = null;
         }}
       >
+        <g pointerEvents="none" stroke="#526184" opacity=".48">
+          {Array.from({ length: 25 }, (_, i) => i - 12)
+            .flatMap((k) => [
+              [new V(k, 0, -12), new V(k, 0, 12)],
+              [new V(-12, 0, k), new V(12, 0, k)],
+            ])
+            .map(([u, v], i) => {
+              const a = scene.project(u),
+                b = scene.project(v);
+              return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
+            })}
+        </g>
         {faces &&
           scene.drawn.map((f, j) => (
             <polygon
@@ -251,6 +270,7 @@ export function GeometryStage({
                   width={Math.max(18, i.label!.length * 8 + 8)}
                   height={17}
                   rx={5}
+                  fill={on(i) ? "currentColor" : "#303848"}
                 />
                 <text x={p.x + 9} y={p.y - 9} fontSize={12} fill="white">
                   {i.label}
@@ -354,14 +374,31 @@ export function GeometryStage({
           );
         })}
       </svg>
-      <div className="flex flex-wrap gap-3 p-3 text-xs text-white">
+      <div className="absolute bottom-3 inset-x-3 flex flex-wrap items-center gap-2 text-xs text-white [&_button]:flex [&_button]:items-center [&_button]:gap-1 [&_button]:rounded-xl [&_button]:border [&_button]:border-slate-600 [&_button]:bg-slate-900/90 [&_button]:px-3 [&_button]:py-2">
         <button onClick={() => setLabels(!labels)}>
+          {labels ? <Eye size={15} /> : <EyeOff size={15} />}{" "}
           {labels ? "Ẩn" : "Hiện"} nhãn
         </button>
         <button onClick={() => setFaces(!faces)}>
           {faces ? "Ẩn" : "Hiện"} mặt
         </button>
-        <button onClick={() => setView(home)}>Đặt lại góc nhìn</button>
+        {active && (
+          <label className="relative flex items-center gap-1 rounded-xl border border-slate-600 bg-slate-900/90 p-2 cursor-pointer">
+            <Palette size={15} />
+            Màu
+            <input
+              aria-label="Màu đối tượng đang chọn"
+              type="color"
+              value={active.color}
+              onChange={(e) => recolor(e.target.value)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </label>
+        )}
+        <button className="ml-auto" onClick={() => setView(home)}>
+          <RotateCcw size={15} className="text-amber-400" />
+          Đặt lại góc nhìn
+        </button>
       </div>
     </div>
   );
