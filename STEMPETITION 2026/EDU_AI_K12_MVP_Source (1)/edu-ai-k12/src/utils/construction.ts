@@ -9,6 +9,7 @@ export interface Item {
   color: string;
   label?: string;
   facets?: V[][];
+  cells?:V[][][];
   volume?: number;
   center?: V;
   area?: number;

@@ -191,3 +191,44 @@ export const extraSolids = [
   ...platonicDual(),
 ];
 for (const p of extraSolids[0].points) if (p.y) p.y = 2 * Math.sqrt(2);
+
+const notes: Record<string, [string, string]> = {
+  cube: ["Sáu mặt vuông có cùng cạnh a.", "V=a^3"],
+  upright: ["Hai đáy ngũ giác bằng nhau, cạnh bên vuông góc với đáy.", "V=Bh"],
+  oblique: [
+    "Hai đáy song song. Chiều cao h là khoảng cách giữa hai đáy.",
+    "V=Bh",
+  ],
+  "pyramid-oblique": [
+    "Chiều cao h đo vuông góc từ đỉnh xuống đáy có diện tích B.",
+    "V=Bh/3",
+  ],
+  "pyramid-regular": [
+    "Đáy là ngũ giác đều và chân đường cao là tâm đáy.",
+    "V=Bh/3",
+  ],
+  frustum: [
+    "Hai đáy song song có diện tích B và b, cách nhau h.",
+    "V=h(B+b+\\sqrt{Bb})/3",
+  ],
+  octa: ["Tám mặt tam giác đều có cạnh a.", "V=\\sqrt{2}a^3/3"],
+  icosa: ["Hai mươi mặt tam giác đều có cạnh a.", "V=5(3+\\sqrt5)a^3/12"],
+  dodeca: ["Mười hai mặt ngũ giác đều có cạnh a.", "V=(15+7\\sqrt5)a^3/4"],
+  sphere: ["Mọi điểm trên mặt cầu cách tâm một khoảng R.", "V=4\\pi R^3/3"],
+  cylinder: ["Hai đáy tròn cùng bán kính R, cách nhau h.", "V=\\pi R^2h"],
+  cone: [
+    "Đáy tròn bán kính R, đỉnh cách mặt đáy một khoảng h.",
+    "V=\\pi R^2h/3",
+  ],
+  "cone-frustum": [
+    "Hai đáy tròn song song có bán kính R và r, cách nhau h.",
+    "V=\\pi h(R^2+Rr+r^2)/3",
+  ],
+};
+for (const solid of extraSolids) {
+  const note = notes[solid.id.slice(5)];
+  if (note) {
+    solid.description = note[0];
+    solid.formulasLatex = [note[1]];
+  }
+}

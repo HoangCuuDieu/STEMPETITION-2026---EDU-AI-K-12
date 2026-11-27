@@ -1,3 +1,11 @@
+import {
+  outline,
+  hull,
+  unique,
+  unionFaces,
+  planes,
+  massProperties,
+} from "../../utils/spatialHull";
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Shapes, X, Ruler } from "lucide-react";
 import { MATH_SOLIDS, type SolidPreset } from "../../utils/mathGeometry";
@@ -25,11 +33,7 @@ const modes = [
     "Thêm trọng tâm mặt phẳng",
     "Thêm trọng tâm hình khối",
   ],
-  [
-    "Nối 2 điểm thành đoạn thẳng",
-    "Nối 3 điểm thành mặt phẳng",
-    "Nối 4 điểm thành hình khối",
-  ],
+  ["Tạo đường thẳng", "Tạo mặt phẳng", "Tạo hình khối"],
   [
     "Tìm giao điểm của 2 đối tượng",
     "Tìm giao tuyến giữa 2 đối tượng",
@@ -93,7 +97,13 @@ export function SpatialGeometryLab({
   );
 }
 function Workshop({ preset }: { preset: SolidPreset }) {
-  const base = useMemo(() => initial(preset), [preset]),
+  const base = useMemo(
+      () =>
+        initial(preset).sort(
+          (a, b) => Number(b.label === "S") - Number(a.label === "S"),
+        ),
+      [preset],
+    ),
     [items, setItems] = useState(base),
     [selected, select] = useState("");
   const [mode, setMode] = useState([0, 0, 0]),
@@ -150,7 +160,33 @@ function Workshop({ preset }: { preset: SolidPreset }) {
       .join("");
     return o.kind === "face" ? "(" + letters + ")" : letters;
   }
+  const tableData = useMemo(
+    () =>
+      new Map(
+        items.map((i) => [
+          i.id,
+          {
+            name: name(i),
+            coords: center(i)
+              .toArray()
+              .map((n) => n.toFixed(2))
+              .join(", "),
+          },
+        ]),
+      ),
+    [items, knownLabels],
+  );
   function choices(key: string): Kind[] {
+    if (key.startsWith("p") || key.startsWith("c")) {
+      const m = mode[key[0] === "p" ? 0 : 1];
+      return m === 0
+        ? key[0] === "p"
+          ? ["point", "line"]
+          : ["point"]
+        : m === 1
+          ? ["point", "line", "face"]
+          : ["point", "line", "face", "solid"];
+    }
     if (key === "area") return ["face", "solid"];
     if (key.startsWith("i"))
       return mode[2] === 0
@@ -168,7 +204,23 @@ function Workshop({ preset }: { preset: SolidPreset }) {
     const list = items.filter((i) => kind.includes(i.kind));
     return values[key] !== undefined
       ? list.find((i) => i.id === values[key])
-      : list[defaultIndex % Math.max(1, list.length)];
+      : /^[pc]/.test(key)
+        ? undefined
+        : list[defaultIndex % Math.max(1, list.length)];
+  }
+  function inputs(prefix: string) {
+    return Object.keys(values)
+      .filter((k) => k.startsWith(prefix) && get(k))
+      .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))
+      .map((k) => get(k)!);
+  }
+  function locked(key: string) {
+    if (!key.startsWith("p") || get(key)) return false;
+    const objs = inputs("p");
+    return (
+      objs.some((o) => o.kind === ["line", "face", "solid"][mode[0]]) ||
+      unique(objs.flatMap((o) => o.vertices)).length >= mode[0] + 2
+    );
   }
   function forbidden(key: string, o: Item) {
     if (key.startsWith("p") || key.startsWith("c")) {
@@ -186,7 +238,7 @@ function Workshop({ preset }: { preset: SolidPreset }) {
     );
   }
   function choose(key: string, o: Item) {
-    if (!choices(key).includes(o.kind) || forbidden(key, o)) {
+    if (locked(key) || !choices(key).includes(o.kind) || forbidden(key, o)) {
       setBad(key);
       return;
     }
@@ -201,6 +253,7 @@ function Workshop({ preset }: { preset: SolidPreset }) {
         <span className="text-xs text-slate-600">{label}</span>
         <button
           type="button"
+          disabled={locked(key)}
           aria-expanded={open === key}
           onClick={() => {
             setOpen(open === key ? "" : key);
@@ -222,6 +275,21 @@ function Workshop({ preset }: { preset: SolidPreset }) {
         </button>
         {open === key && (
           <div className="absolute z-20 top-full left-0 w-max min-w-full max-w-64 max-h-48 overflow-auto bg-white border rounded-lg shadow-lg">
+            {/^[pc]/.test(key) && (
+              <button
+                className="block p-2 text-xs"
+                onClick={() => {
+                  setValues((v) => {
+                    const n = { ...v };
+                    delete n[key];
+                    return n;
+                  });
+                  setOpen("");
+                }}
+              >
+                Bỏ chọn
+              </button>
+            )}
             {items
               .filter((i) => choices(key).includes(i.kind))
               .map((i) => (
@@ -266,6 +334,14 @@ function Workshop({ preset }: { preset: SolidPreset }) {
                 key={s}
                 className="block text-left w-full text-sm p-2 hover:bg-violet-50"
                 onClick={() => {
+                  if (g < 2)
+                    setValues((v) =>
+                      Object.fromEntries(
+                        Object.entries(v).filter(
+                          ([k]) => !k.startsWith(g ? "c" : "p"),
+                        ),
+                      ),
+                    );
                   setMode(mode.map((n, j) => (j === g ? i : n)));
                   setMenu(-1);
                   setErrors((e) => ({ ...e, [g]: "" }));
@@ -349,40 +425,148 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           names[1],
         );
       } else if (g < 2) {
-        const v = Array.from(
-          { length: mode[g] + 2 },
-          (_, j) => get((g ? "c" : "p") + j)?.vertices[0],
+        const objects = inputs(g ? "c" : "p"),
+          m = mode[g];
+        if (!objects.length) throw Error("Hãy chọn đối tượng.");
+        let pts = unique(objects.flatMap((o) => o.vertices));
+        if (!g && objects.length === 1 && objects[0].kind === "line")
+          pts.sort(
+            (a, b) => points.indexOf(pointAt(a)!) - points.indexOf(pointAt(b)!),
+          );
+        const entity = objects.find(
+          (o) => o.kind === (m === 1 ? "face" : "solid"),
         );
-        if (v.some((p) => !p)) throw Error("Hãy chọn đủ điểm.");
-        const pts = v as V[];
-        validate(pts);
-        if (g === 0) {
-          let p = mean(pts);
-          if (mode[g] === 0) {
+        if (g === 0 && m > 0 && entity && objects.length === 1)
+          result = point(center(entity), names[0]);
+        else if (m === 0) {
+          if (pts.length !== 2) throw Error("Cần hai điểm phân biệt.");
+          if (g) result = put("line", pts);
+          else {
             const parts = ratio.split(":").map(Number);
             if (
               parts.length !== 2 ||
-              parts.some((x) => !Number.isFinite(x) || x <= 0)
+              parts.some((x) => !Number.isFinite(x) || x <= 0) ||
+              parts[0] > parts[1]
             )
-              throw Error("Nhập tỉ lệ x:y với x và y dương.");
-            p = pts[0].clone().lerp(pts[1], 1 / (1 + parts[1] / parts[0]));
+              throw Error("Tỉ lệ AM:AB phải lớn hơn 0 và không vượt quá 1.");
+            result = point(
+              pts[0].clone().lerp(pts[1], parts[0] / parts[1]),
+              names[0],
+            );
           }
-          result = point(p, names[0]);
-        } else if (pts.length === 2) result = put("line", pts);
-        else if (pts.length === 3) result = polygon(pts);
-        else {
-          const facets = pts.map((_, i) => pts.filter((_, j) => i !== j));
+        } else if (m === 1) {
+          const face = polygon(outline(pts));
+          result = g ? face : point(center(face), names[0]);
+        } else {
+          const onlySolids = objects.every((o) => o.kind === "solid");
+          if (g && onlySolids && objects.length === 1)
+            throw Error("Chọn thêm đối tượng để kết hợp.");
+          const cells = onlySolids
+            ? objects.flatMap((o) => o.cells ?? [o.facets!])
+            : [hull(pts)];
+          const facets = cells.length === 1 ? cells[0] : unionFaces(cells);
+          if (!facets.length) throw Error("Không tạo được biên khối.");
+          const verts = unique(facets.flat());
+          const participants = new Set(objects.flatMap((o) => o.vertices));
+          for (let i = next.length - 1; i >= 0; i--) {
+            const o = next[i];
+            if (objects.includes(o) && o.kind === "solid") {
+              next.splice(i, 1);
+              continue;
+            }
+            if (!o.vertices.every((p) => participants.has(p))) continue;
+            if (
+              o.kind === "face" &&
+              !facets.some(
+                (f) =>
+                  f.length === o.vertices.length &&
+                  f.every((p) => o.vertices.some((q) => same(p, q))),
+              )
+            )
+              next.splice(i, 1);
+            else if (
+              o.kind === "line" &&
+              !facets.some((f) =>
+                f.some((p, j) =>
+                  o.vertices.every(
+                    (q) => same(q, p) || same(q, f[(j + 1) % f.length]),
+                  ),
+                ),
+              )
+            )
+              next.splice(i, 1);
+          }
+          for (const v of verts)
+            if (!next.some((o) => o.kind === "point" && same(o.vertices[0], v)))
+              point(v);
+          if (cells.length > 1) {
+            const bounds = cells.map(planes);
+            for (const edge of [...next].filter((o) => o.kind === "line")) {
+              const [a, b] = edge.vertices,
+                cuts = [0, 1];
+              for (const cell of bounds)
+                for (const { n, d } of cell) {
+                  const x = n.dot(a) - d,
+                    y = n.dot(b) - d;
+                  if (x * y < 0) {
+                    const t = x / (x - y),
+                      p = a.clone().lerp(b, t);
+                    if (cell.every((h) => h.n.dot(p) <= h.d + 1e-7))
+                      cuts.push(t);
+                  }
+                }
+              cuts.sort((a, b) => a - b);
+              const keep: V[][] = [];
+              for (let j = 1; j < cuts.length; j++) {
+                if (cuts[j] - cuts[j - 1] < 1e-7) continue;
+                const m = a.clone().lerp(b, (cuts[j] + cuts[j - 1]) / 2);
+                if (
+                  !bounds.some((cell) =>
+                    cell.every((h) => h.n.dot(m) < h.d - 1e-7),
+                  )
+                )
+                  keep.push([
+                    a.clone().lerp(b, cuts[j - 1]),
+                    a.clone().lerp(b, cuts[j]),
+                  ]);
+              }
+              if (
+                keep.length === 1 &&
+                same(keep[0][0], a) &&
+                same(keep[0][1], b)
+              )
+                continue;
+              next.splice(next.indexOf(edge), 1);
+              for (const pair of keep) {
+                for (const p of pair)
+                  if (
+                    !next.some(
+                      (i) => i.kind === "point" && same(i.vertices[0], p),
+                    )
+                  )
+                    point(p);
+                put("line", pair, { color: edge.color });
+              }
+            }
+          }
           facets.forEach(polygon);
-          result = put("solid", pts, {
+          const solid = put("solid", verts, {
+            ...(cells.length > 1 ? massProperties(facets) : {}),
             facets,
+            cells,
             label:
-              pointAt(pts[0])?.label +
-              "." +
-              pts
-                .slice(1)
-                .map((p) => pointAt(p)?.label)
+              "Khối " +
+              verts
+                .slice(0, 8)
+                .map(
+                  (v) =>
+                    next.find(
+                      (o) => o.kind === "point" && same(o.vertices[0], v),
+                    )?.label,
+                )
                 .join(""),
           });
+          result = g ? solid : point(center(solid), names[0]);
         }
       } else {
         const a = get("i0"),
@@ -445,22 +629,36 @@ function Workshop({ preset }: { preset: SolidPreset }) {
   function pointFields(g: number) {
     return (
       <div className="grid grid-cols-2 gap-2">
-        {Array.from({ length: mode[g] + 2 }, (_, j) =>
-          picker((g ? "c" : "p") + j, "Điểm " + (j + 1)),
+        {Array.from(
+          {
+            length:
+              g && mode[g] > 0
+                ? Math.max(
+                    mode[g] + 2,
+                    ...Object.keys(values)
+                      .filter((k) => k.startsWith("c"))
+                      .map((k) => Number(k.slice(1)) + 2),
+                  )
+                : mode[g] + 2,
+          },
+          (_, j) => picker((g ? "c" : "p") + j, "Đối tượng " + (j + 1)),
         )}
       </div>
     );
   }
   const nm = (i: number) => (
-    <input
-      aria-label="Tên điểm mới"
-      placeholder="Tên điểm"
-      className={field}
-      value={names[i]}
-      onChange={(e) =>
-        setNames(names.map((v, j) => (i === j ? e.target.value : v)))
-      }
-    />
+    <label className="text-xs text-slate-600">
+      Tên điểm
+      <input
+        aria-label="Tên điểm mới"
+        placeholder="Tên điểm"
+        className={field}
+        value={names[i]}
+        onChange={(e) =>
+          setNames(names.map((v, j) => (i === j ? e.target.value : v)))
+        }
+      />
+    </label>
   );
   const a = get("d0"),
     b = get("d2"),
@@ -523,13 +721,16 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           <div className="grid grid-cols-2 gap-2">
             {nm(0)}
             {mode[0] === 0 && (
-              <input
-                className={field}
-                value={ratio}
-                placeholder="x:y"
-                aria-label="Tỉ lệ chia đoạn x:y"
-                onChange={(e) => setRatio(e.target.value)}
-              />
+              <label className="text-xs text-slate-600">
+                Tỉ lệ AM:AB
+                <input
+                  className={field}
+                  value={ratio}
+                  placeholder="x:y"
+                  aria-label="Tỉ lệ chia đoạn x:y"
+                  onChange={(e) => setRatio(e.target.value)}
+                />
+              </label>
             )}
           </div>
           {action(0, "Tạo điểm")}
@@ -544,19 +745,21 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           <div className="grid grid-cols-4 gap-1">
             {nm(1)}
             {coords.map((c, i) => (
-              <input
-                key={i}
-                type="number"
-                step="any"
-                aria-label={"Tọa độ " + "XYZ"[i]}
-                value={c}
-                onChange={(e) =>
-                  setCoords(
-                    coords.map((n, j) => (i === j ? e.target.value : n)),
-                  )
-                }
-                className={field}
-              />
+              <label key={i} className="text-xs text-slate-600">
+                Tọa độ {"XYZ"[i]}
+                <input
+                  type="number"
+                  step="any"
+                  aria-label={"Tọa độ " + "XYZ"[i]}
+                  value={c}
+                  onChange={(e) =>
+                    setCoords(
+                      coords.map((n, j) => (i === j ? e.target.value : n)),
+                    )
+                  }
+                  className={field}
+                />
+              </label>
             ))}
           </div>
           {action(3, "Đặt điểm")}
@@ -570,7 +773,7 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           {header(1)}
           {pointFields(1)}
           {color(0)}
-          {action(1, "Nối các điểm")}
+          {action(1, modes[1][mode[1]])}
         </div>
         <div
           className={
@@ -651,29 +854,27 @@ function Workshop({ preset }: { preset: SolidPreset }) {
           <h3 className="font-bold text-sm">
             Bảng các đối tượng ({items.length})
           </h3>
-          <div className="max-h-72 overflow-auto">
+          <div className="max-h-72 overflow-auto overscroll-contain [contain:strict] h-72">
             {Object.keys(types).flatMap((k) =>
               items
                 .filter((i) => i.kind === k)
                 .map((i) => (
                   <div
                     key={i.id}
-                    className="flex items-center gap-2 border-b py-1 text-xs"
+                    className="flex items-center gap-2 border-b py-1 text-xs [content-visibility:auto] [contain-intrinsic-size:auto_28px]"
                   >
-                    <span title={name(i)} className="min-w-0 flex-1 truncate">
-                      {name(i)}
+                    <span
+                      title={tableData.get(i.id)!.name}
+                      className="min-w-0 flex-1 truncate"
+                    >
+                      {tableData.get(i.id)!.name}
                     </span>
                     <small>{types[i.kind]}</small>
                     <span className="tabular-nums">
-                      (
-                      {center(i)
-                        .toArray()
-                        .map((n) => n.toFixed(2))
-                        .join(", ")}
-                      )
+                      ({tableData.get(i.id)!.coords})
                     </span>
                     <button
-                      aria-label={"Xóa " + name(i)}
+                      aria-label={"Xóa " + tableData.get(i.id)!.name}
                       className="text-red-600 p-1"
                       onClick={() => {
                         setItems(items.filter((o) => o !== i));
