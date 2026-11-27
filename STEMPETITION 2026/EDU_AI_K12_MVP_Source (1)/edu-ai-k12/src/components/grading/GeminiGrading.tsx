@@ -1,3 +1,4 @@
+import {GradingReport} from './GradingReport';
 import { ClipboardCheck, FileText } from 'lucide-react';
 import { useContext, useState, type FormEvent } from 'react';
 import { AccountContext, request } from '../../services/account';
@@ -81,7 +82,7 @@ export function GeminiGrading() {
           <h2 className="font-bold text-slate-950">Kết quả chấm bài</h2>
           {!report && <p className="text-sm text-slate-600">{busy ? 'Trợ lý đang đọc bài làm và chuẩn bị nhận xét.' : 'Nhận xét và điểm sẽ xuất hiện ở đây sau khi chấm.'}</p>}
         </div>
-        {report && <article className="mt-5 whitespace-pre-wrap break-words border-t border-amber-100 pt-4 text-sm leading-7 text-slate-800">{report}</article>}
+        {report && <article className="mt-5 break-words border-t border-amber-100 pt-4 text-sm leading-7 text-slate-800"><GradingReport text={report}/></article>}
       </section>
     </div>
   );

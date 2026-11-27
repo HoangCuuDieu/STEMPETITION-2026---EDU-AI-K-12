@@ -20,7 +20,7 @@ import { GradingView } from './components/grading/GradingView';
 import { KnowledgeBaseView } from './components/knowledge/KnowledgeBaseView';
 import { SpatialGeometryLab } from './components/math/SpatialGeometryLab';
 import { PhysicsLabView } from './components/physics/PhysicsLabView';
-import { ProgressView } from './components/progress/ProgressView';
+import { EncouragementView } from './components/progress/EncouragementView';
 import type { AppTab, InternalModelLink, LabDomain } from './types/assistant';
 
 const NAV_TABS: {
@@ -60,7 +60,7 @@ const NAV_TABS: {
   },
   {
     id: 'progress',
-    label: 'Tiến độ',
+    label: 'Động viên khích lệ',
     icon: Award,
     activeClass: 'text-indigo-700 font-semibold',
     underlineClass: 'bg-gradient-to-r from-indigo-500 to-purple-500',
@@ -312,7 +312,7 @@ function Workspace({user, onLogout}: {user: Account; onLogout: () => void}) {
           <KnowledgeBaseView onOpenModel={handleOpenModel} onAsk={item => { setLesson(item); setActiveTab('assistant'); }} />
         )}
 
-        {activeTab === 'progress' && <ProgressView />}
+        {activeTab === 'progress' && <EncouragementView />}
       </main>
     </div>
   );
