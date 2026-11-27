@@ -242,7 +242,13 @@ function Workshop({ preset }: { preset: SolidPreset }) {
       setBad(key);
       return;
     }
-    setValues((v) => ({ ...v, [key]: o.id }));
+    setValues((v) => {
+      let next = {...v};
+      if(key.startsWith("p") && o.kind === ["line","face","solid"][mode[0]]) {
+        next=Object.fromEntries(Object.entries(next).filter(([k])=>!k.startsWith("p")));
+      }
+      return {...next,[key]:o.id};
+    });
     setOpen("");
     setBad("");
   }
