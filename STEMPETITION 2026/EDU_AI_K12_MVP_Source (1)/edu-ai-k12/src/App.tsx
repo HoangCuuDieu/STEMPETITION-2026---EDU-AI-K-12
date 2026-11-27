@@ -5,7 +5,7 @@ import { AccountContext, request, type Account } from './services/account';
 import { useEffect, useState, type ComponentType } from 'react';
 import {
   Atom,
-  Award,
+  Heart,
   BookOpen,
   Box,
   ClipboardCheck,
@@ -61,7 +61,7 @@ const NAV_TABS: {
   {
     id: 'progress',
     label: 'Động viên khích lệ',
-    icon: Award,
+    icon: Heart,
     activeClass: 'text-indigo-700 font-semibold',
     underlineClass: 'bg-gradient-to-r from-indigo-500 to-purple-500',
   },
