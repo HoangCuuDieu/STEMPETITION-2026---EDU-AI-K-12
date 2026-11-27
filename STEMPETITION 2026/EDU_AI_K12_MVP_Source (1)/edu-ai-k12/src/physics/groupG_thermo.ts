@@ -1,6 +1,17 @@
 import type { PhysicsSimulationSpec } from '../types/physics';
 import { drawLabel, drawStageBackground } from './canvasHelpers';
 
+// Representative molecules in a 2D slice. RMS speed scales with sqrt(T).
+function gas(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,n:number,T:number,t:number){
+ const bounce=(distance:number,length:number)=>length-Math.abs(distance%(2*length)-length);
+ ctx.fillStyle='#bae6fd';
+ for(let i=0;i<Math.round(18*n);i++){
+   const phase=i*2.39996,speed=48*Math.sqrt(T/300);
+   const px=bounce(100000*w+(i*.618%1)*w+t*speed*Math.cos(phase),w);
+   const py=bounce(100000*h+(i*.414%1)*h+t*speed*Math.sin(phase),h);
+   ctx.beginPath();ctx.arc(x+px,y+py,2,0,2*Math.PI);ctx.fill();
+ }
+}
 export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
   {
     id: 'phys-31',
@@ -9,7 +20,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
     groupId: 'G',
     groupName: 'Nhiệt học',
     suggestedGrades: [12],
-    isTimeDependent: false,
+    isTimeDependent: true,
     previewType: 'thermo',
     status: 'implemented',
     parameters: [
@@ -38,6 +49,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
 
       ctx.fillStyle = `rgba(14, 165, 233, ${Math.min(0.65, 0.15 + pAtm * 0.04)})`;
       ctx.fillRect(cylX, cylY, pistonX - cylX, cylH);
+      gas(ctx,cylX,cylY,pistonX-cylX,cylH,n,T,_t);
       ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 3;
       ctx.strokeRect(cylX, cylY, cylW, cylH);
@@ -69,7 +81,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
     groupId: 'G',
     groupName: 'Nhiệt học',
     suggestedGrades: [12],
-    isTimeDependent: false,
+    isTimeDependent: true,
     previewType: 'thermo',
     status: 'implemented',
     parameters: [
@@ -98,6 +110,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
 
       ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
       ctx.fillRect(cylX, cylY, pistonX - cylX, cylH);
+      gas(ctx,cylX,cylY,pistonX-cylX,cylH,n,T,_t);
       ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 3;
       ctx.strokeRect(cylX, cylY, cylW, cylH);
@@ -128,7 +141,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
     groupId: 'G',
     groupName: 'Nhiệt học',
     suggestedGrades: [12],
-    isTimeDependent: false,
+    isTimeDependent: true,
     previewType: 'thermo',
     status: 'implemented',
     parameters: [
@@ -154,6 +167,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
       const bh = 180;
       ctx.fillStyle = `rgba(244, 63, 94, ${Math.min(0.6, 0.1 + (T - 200) / 800)})`;
       ctx.fillRect(bx, by, bw, bh);
+      gas(ctx,bx,by,bw,bh,n,T,_t);
       ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 4;
       ctx.strokeRect(bx, by, bw, bh);
@@ -224,7 +238,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Nhiệt độ cân bằng t_cb', value: Teq.toFixed(1), unit: '°C' },
           { label: 'Nhiệt lượng trao đổi Q', value: (Q / 1000).toFixed(1), unit: 'kJ' },
         ],
-        graphSeries: { title: 'Nhiệt độ vật nóng t₁(t)', xLabel: 't (s)', yLabel: 't₁ (°C)', points: history.slice(-150) },
+        graphSeries: { title: 'Nhiệt độ vật nóng t₁(t)', xLabel: 't (s)', yLabel: 't₁ (°C)', points: history },
       };
     },
   },
@@ -283,7 +297,7 @@ export const GROUP_G_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Công suất dẫn nhiệt Φ', value: flux.toFixed(1), unit: 'W' },
           { label: 'Độ dẫn nhiệt k', value: `${k}`, unit: 'W/(m·K)' },
         ],
-        graphSeries: { title: 'Dòng nhiệt ổn định Φ', xLabel: 't (s)', yLabel: 'Φ (W)', points: history.slice(-120) },
+        graphSeries: { title: 'Dòng nhiệt ổn định Φ', xLabel: 't (s)', yLabel: 'Φ (W)', points: history },
       };
     },
   },

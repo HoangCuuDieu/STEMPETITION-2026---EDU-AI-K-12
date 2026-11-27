@@ -62,7 +62,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Tọa độ x', value: x.toFixed(2), unit: 'm' },
           { label: 'Quãng đường s', value: s.toFixed(2), unit: 'm' },
         ],
-        graphSeries: { title: 'Đồ thị tọa độ x(t)', xLabel: 't (s)', yLabel: 'x (m)', points: history.slice(-150) },
+        graphSeries: { title: 'Đồ thị tọa độ x(t)', xLabel: 't (s)', yLabel: 'x (m)', points: history },
       };
     },
   },
@@ -108,7 +108,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Vận tốc v', value: v.toFixed(2), unit: 'm/s' },
           { label: 'Độ dịch chuyển Δx', value: x.toFixed(2), unit: 'm' },
         ],
-        graphSeries: { title: 'Đồ thị vận tốc v(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Đồ thị vận tốc v(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history },
       };
     },
   },
@@ -159,6 +159,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.beginPath();
       ctx.arc(w * 0.5, ballY - 10, 11, 0, Math.PI * 2);
       ctx.fill();
+      if (y>0) drawArrow(ctx,w*.5,ballY,w*.5,ballY+2*g,"#fb7185","P");
       if (y > 0) drawArrow(ctx, w * 0.5, ballY - 10, w * 0.5, ballY - 10 + Math.min(60, v * 1.5), '#f59e0b', 'v');
 
       history.push({ x: Number(tEff.toFixed(2)), y: Number(y.toFixed(2)) });
@@ -169,7 +170,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Vận tốc v', value: v.toFixed(2), unit: 'm/s' },
           { label: 'Thời gian chạm đất', value: tHit.toFixed(2), unit: 's' },
         ],
-        graphSeries: { title: 'Đồ thị độ cao h(t)', xLabel: 't (s)', yLabel: 'h (m)', points: history.slice(-150) },
+        graphSeries: { title: 'Đồ thị độ cao h(t)', xLabel: 't (s)', yLabel: 'h (m)', points: history },
       };
     },
   },
@@ -206,10 +207,9 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
       const vy = g * tEff;
       const vMag = Math.hypot(v0, vy);
 
-      const ox = 48;
-      const oy = h - 32;
-      const maxRange = Math.max(40, v0 * tHit);
-      const scale = Math.min((w - 100) / maxRange, (h - 70) / Math.max(20, h0));
+      const scale = Math.min((w-100)/110,(h-70)/80);
+      const ox = 48 - Math.max(0,x*scale-(w-100));
+      const oy = h-32 + Math.max(0,y*scale-(h-70));
       drawStageBackground(ctx, w, h, ox, oy);
 
       ctx.strokeStyle = '#38bdf8';
@@ -229,6 +229,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.beginPath();
       ctx.arc(bx, by, 8, 0, Math.PI * 2);
       ctx.fill();
+      if(tEff<tHit) drawArrow(ctx,bx,by,bx,by+2*g,"#fb7185","P");
       if (y > 0) drawArrow(ctx, bx, by, bx + v0 * 1.5, by + vy * 1.5, '#facc15', 'v');
 
       history.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
@@ -240,7 +241,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Tốc độ |v|', value: vMag.toFixed(2), unit: 'm/s' },
           { label: 'Tầm bay xa L', value: (v0 * tHit).toFixed(2), unit: 'm' },
         ],
-        graphSeries: { title: 'Quỹ đạo y(x)', xLabel: 'x (m)', yLabel: 'y (m)', points: history.slice(-150) },
+        graphSeries: { title: 'Quỹ đạo y(x)', xLabel: 'x (m)', yLabel: 'y (m)', points: history },
       };
     },
   },
@@ -284,9 +285,9 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
       const R = vx * tFlight;
       const Hmax = (vy0 * vy0) / (2 * g);
 
-      const ox = 48;
-      const oy = h - 32;
-      const scale = Math.min((w - 100) / Math.max(25, R), (h - 70) / Math.max(15, Hmax));
+      const scale = Math.min((w-100)/110,(h-70)/80);
+      const ox = 48 - Math.max(0,x*scale-(w-100));
+      const oy = h-32 + Math.max(0,y*scale-(h-70));
       drawStageBackground(ctx, w, h, ox, oy);
 
       ctx.strokeStyle = '#a855f7';
@@ -306,6 +307,7 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.beginPath();
       ctx.arc(bx, by, 8, 0, Math.PI * 2);
       ctx.fill();
+      if(tEff<tFlight) drawArrow(ctx,bx,by,bx,by+2*g,"#fb7185","P");
       if (tEff < tFlight) drawArrow(ctx, bx, by, bx + vx * 1.4, by - vy * 1.4, '#38bdf8', 'v');
 
       history.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
@@ -314,10 +316,12 @@ export const GROUP_A_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Thời gian t', value: tEff.toFixed(2), unit: 's' },
           { label: 'Vị trí (x, y)', value: `(${x.toFixed(1)}, ${y.toFixed(1)})`, unit: 'm' },
           { label: 'Tốc độ |v|', value: Math.hypot(vx, vy).toFixed(2), unit: 'm/s' },
+          { label:'Vận tốc ngang',value:vx.toFixed(2),unit:'m/s' },
+          {label:'Vận tốc đứng',value:vy.toFixed(2),unit:'m/s' },
           { label: 'Độ cao cực đại H', value: Hmax.toFixed(2), unit: 'm' },
           { label: 'Tầm bay xa R', value: R.toFixed(2), unit: 'm' },
         ],
-        graphSeries: { title: 'Quỹ đạo y(x)', xLabel: 'x (m)', yLabel: 'y (m)', points: history.slice(-160) },
+        graphSeries: { title: 'Quỹ đạo y(x)', xLabel: 'x (m)', yLabel: 'y (m)', points: history },
       };
     },
   },

@@ -92,6 +92,19 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
     };
   }, [selectedId]);
 
+  const p=paramValues;
+  const endTime = selectedId==='phys-03'||selectedId==='phys-04' ? Math.sqrt(2*p.h0/p.g) :
+    selectedId==='phys-05' ? 2*p.v0*Math.sin(p.angle*Math.PI/180)/p.g : 30;
+  const [probe,setProbe]=useState<{x:number;y:number;px:number;py:number}|null>(null);
+  let probeText='';
+  if(probe && selectedId==='phys-41'){
+    const r=Math.hypot(probe.x-380,probe.y-210)/8;
+    probeText=r<0.1?'Trên trục dây':('r = '+r.toFixed(2)+' cm · B = '+(20*Math.abs(p.I)/r).toFixed(2)+' μT');
+  }
+  if(probe && selectedId==='phys-26' && probe.x>=40){
+    const x=(probe.x-40)/75;
+    probeText='x = '+x.toFixed(2)+' m · u = '+(p.A*Math.cos(2*Math.PI*p.f*(simTime-x/p.v))).toFixed(2)+' cm';
+  }
   const drawGraphCanvas = (result: PhysicsSimulationResult | null) => {
     const gCanvas = graphCanvasRef.current;
     if (!gCanvas || !result?.graphSeries) return;
@@ -129,6 +142,9 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
       if (p.y < minY) minY = p.y;
       if (p.y > maxY) maxY = p.y;
     }
+    minY=Math.min(0,minY);maxY=Math.max(0,maxY);
+    if(maxY===minY){minY-=1;maxY+=1}
+    if(result.graphSeries.xLabel==='t (s)'){minX=0;maxX=endTime;}
     const spanX = Math.max(1e-4, maxX - minX);
     const spanY = Math.max(1e-4, maxY - minY);
 
@@ -179,7 +195,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
         paramValues,
         historyRef.current,
       );
-      if (now - lastPanelUpdate >= 100) {
+      if (now - lastPanelUpdate >= 100 || t>=endTime) {
         lastPanelUpdate = now;
         setSimTime(t);
         setSimResult(res);
@@ -200,8 +216,9 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
       }
       const dt = Math.min(0.05, (now - lastFrameRef.current) / 1000);
       lastFrameRef.current = now;
-      simTimeRef.current += dt;
+      simTimeRef.current = Math.min(endTime,simTimeRef.current+dt);
       renderAtTime(simTimeRef.current, now);
+      if(simTimeRef.current>=endTime){setIsPlaying(false);return}
       rafId = window.requestAnimationFrame(tick);
     };
 
@@ -235,6 +252,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
 
   const handleParamChange = (key: string, value: number) => {
     historyRef.current = [];
+    simTimeRef.current=0;lastFrameRef.current=null;
     setParamValues((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -340,7 +358,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
               <>
                 <button
                   type="button"
-                  onClick={() => setIsPlaying((p) => !p)}
+                  onClick={() => {if(simTimeRef.current>=endTime)handleResetSim();setIsPlaying((p) => !p)}}
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:brightness-110 transition-all shadow-sm shadow-sky-500/25"
                 >
                   {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
@@ -398,11 +416,14 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
           <div className="lg:col-span-8 space-y-4">
             <div className="relative rounded-2xl overflow-hidden border-2 border-sky-950/20 bg-[#0c1322] shadow-md">
               <canvas
+                onPointerLeave={()=>setProbe(null)}
+                onPointerMove={e=>{if(selectedId!=='phys-41'&&selectedId!=='phys-26')return;const r=e.currentTarget.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;setProbe({x:px*760/r.width,y:py*420/r.height,px:Math.max(0,Math.min(px+10,r.width-170)),py:Math.max(0,py-35)})}}
                 ref={canvasRef}
                 width={760}
                 height={420}
                 className="w-full h-auto block"
               />
+              {probe && probeText && <div className="pointer-events-none absolute rounded bg-slate-950/90 px-2 py-1 text-xs text-white" style={{left:probe.px,top:probe.py}}>{probeText}</div>}
               {activeSim?.isTimeDependent && (
                 <div className="absolute top-3 right-3 px-3 py-1 rounded-lg bg-slate-900/90 border border-sky-400/40 text-xs font-mono font-bold text-sky-300 tabular-nums shadow-sm">
                   t = {simTime.toFixed(2)} s

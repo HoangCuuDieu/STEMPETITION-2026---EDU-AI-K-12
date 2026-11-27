@@ -61,7 +61,7 @@ export const GROUP_D_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Chu kỳ T', value: T.toFixed(2), unit: 's' },
           { label: 'Tần số f', value: (1 / T).toFixed(2), unit: 'Hz' },
         ],
-        graphSeries: { title: 'Hình chiếu x(t) = R·cos(ωt)', xLabel: 't (s)', yLabel: 'x (m)', points: history.slice(-150) },
+        graphSeries: { title: 'Hình chiếu x(t) = R·cos(ωt)', xLabel: 't (s)', yLabel: 'x (m)', points: history },
       };
     },
   },
@@ -123,7 +123,7 @@ export const GROUP_D_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Lực hướng tâm F_ht', value: Fht.toFixed(2), unit: 'N' },
           { label: 'Tốc độ góc ω', value: omega.toFixed(2), unit: 'rad/s' },
         ],
-        graphSeries: { title: 'Độ lớn lực hướng tâm F_ht', xLabel: 't (s)', yLabel: 'F_ht (N)', points: history.slice(-120) },
+        graphSeries: { title: 'Độ lớn lực hướng tâm F_ht', xLabel: 't (s)', yLabel: 'F_ht (N)', points: history },
       };
     },
   },
@@ -251,7 +251,7 @@ export const GROUP_D_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Tốc độ góc ω', value: omega.toFixed(2), unit: 'rad/s' },
           { label: 'Góc quay φ', value: phi.toFixed(2), unit: 'rad' },
         ],
-        graphSeries: { title: 'Tốc độ góc ω(t)', xLabel: 't (s)', yLabel: 'ω (rad/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Tốc độ góc ω(t)', xLabel: 't (s)', yLabel: 'ω (rad/s)', points: history },
       };
     },
   },
@@ -337,7 +337,7 @@ export const GROUP_D_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Tốc độ quỹ đạo v', value: curV.toFixed(2), unit: 'đv/s' },
           { label: 'v / v_tròn', value: vFactor.toFixed(2), unit: '' },
         ],
-        graphSeries: { title: 'Khoảng cách tới tâm r(t)', xLabel: 't (s)', yLabel: 'r', points: history.slice(-150) },
+        graphSeries: { title: 'Khoảng cách tới tâm r(t)', xLabel: 't (s)', yLabel: 'r', points: history },
       };
     },
   },

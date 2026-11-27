@@ -28,9 +28,9 @@ export const GROUP_I_SIMULATIONS: PhysicsSimulationSpec[] = [
       const cy = h * 0.5;
       drawStageBackground(ctx, w, h, cx, cy, false);
 
-      [45, 85, 125].forEach((rad) => {
+      (I===0?[]:[45, 85, 125]).forEach((rad) => {
         ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 1.6;
+        ctx.lineWidth = 0.8+Math.abs(I)*5/rad;
         ctx.beginPath();
         ctx.arc(cx, cy, rad, 0, Math.PI * 2);
         ctx.stroke();
@@ -47,12 +47,14 @@ export const GROUP_I_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.arc(cx, cy, 14, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      drawLabel(ctx, I >= 0 ? '•' : '×', cx, cy + 5, '#facc15', 'center');
+      drawLabel(ctx, I===0?'0':I>0?'•':'×', cx, cy + 5, '#facc15', 'center');
 
+      const probeX=cx+rCm*8;ctx.fillStyle="#fb7185";ctx.beginPath();ctx.arc(probeX,cy,4,0,2*Math.PI);ctx.fill();
+      if(I)drawArrow(ctx,probeX,cy,probeX,cy-Math.sign(I)*Math.min(65,B*1e6),"#fbbf24","B");
       return {
         readings: [
           { label: 'Cảm ứng từ B', value: (B * 1e6).toFixed(2), unit: 'μT' },
-          { label: 'Chiều dòng I', value: I >= 0 ? 'Hướng ra (•)' : 'Hướng vào (×)', unit: '' },
+          { label: 'Chiều dòng I', value: I===0?'Không có dòng điện':I>0 ? 'Hướng ra (•)' : 'Hướng vào (×)', unit: '' },
         ],
       };
     },
@@ -232,7 +234,7 @@ export const GROUP_I_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Từ thông cực đại Φ_max', value: (N * B0 * S * 1000).toFixed(2), unit: 'mWb' },
           { label: 'Suất điện động e_c', value: emf.toFixed(3), unit: 'V' },
         ],
-        graphSeries: { title: 'Suất điện động cảm ứng e_c(t)', xLabel: 't (s)', yLabel: 'e_c (V)', points: history.slice(-150) },
+        graphSeries: { title: 'Suất điện động cảm ứng e_c(t)', xLabel: 't (s)', yLabel: 'e_c (V)', points: history },
       };
     },
   },

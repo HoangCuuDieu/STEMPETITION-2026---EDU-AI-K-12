@@ -1,5 +1,5 @@
 import type { PhysicsSimulationSpec } from '../types/physics';
-import { drawLabel, drawStageBackground } from './canvasHelpers';
+import { drawArrow, drawLabel, drawStageBackground } from './canvasHelpers';
 
 export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
   {
@@ -51,6 +51,7 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.arc(ox + xmDot * pxPerM, cy - uDot * 16, 6, 0, Math.PI * 2);
       ctx.fill();
 
+      if(Math.abs(uDot)>0.02)drawArrow(ctx,ox+xmDot*pxPerM,cy-uDot*16,ox+xmDot*pxPerM,cy-uDot*16+Math.max(-50,Math.min(50,uDot*f*f*3)),"#fbbf24","F");
       return {
         readings: [
           { label: 'Bước sóng λ', value: lambda.toFixed(2), unit: 'm' },
@@ -247,7 +248,8 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
     previewType: 'wave',
     status: 'implemented',
     parameters: [
-      { key: 'd', label: 'Khoảng cách 2 nguồn S₁S₂', unit: 'λ', min: 2, max: 6, step: 0.5, defaultValue: 3.5 },
+      { key: 'd', label: 'Khoảng cách 2 nguồn S₁S₂', unit: 'm', min: 2, max: 6, step: 0.5, defaultValue: 3.5 },
+      {key:'v', label:'Tốc độ truyền sóng',unit:'m/s',min:0.5,max:3,step:0.1,defaultValue:1.2},
       { key: 'f', label: 'Tần số sóng f', unit: 'Hz', min: 0.5, max: 2.5, step: 0.25, defaultValue: 1.2 },
     ],
     formulasLatex: ['d_2 - d_1 = k\\lambda \\text{ (cực đại)}', 'd_2 - d_1 = (k + 0.5)\\lambda \\text{ (cực tiểu)}'],
@@ -255,10 +257,12 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
       'Hai nguồn kết hợp cùng pha tạo ra các vân cực đại (biên độ tăng cường) và cực tiểu (triệt tiêu) xen kẽ nhau thành các đường hypebol ổn định trên mặt thoáng.',
     assumptionsAndLimits: ['Hai nguồn đồng bộ, cùng pha, cùng biên độ trên mặt chất lỏng đồng nhất.'],
     stepAndRender: (ctx, w, h, t, params) => {
-      const dLambda = params.d ?? 3.5;
+      const separation = params.d ?? 3.5;
       const f = params.f ?? 1.2;
-      const lambdaPx = 46;
-      const dPx = dLambda * lambdaPx;
+      const speed=params.v??1.2;
+      const lambdaPx = 46*speed/f;
+      const dPx = separation*46;
+      const dLambda=separation*f/speed;
       const cx = w * 0.5;
       const cy = h * 0.5;
       const s1x = cx - dPx / 2;

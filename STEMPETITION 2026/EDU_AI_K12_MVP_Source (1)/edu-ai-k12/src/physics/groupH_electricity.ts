@@ -245,10 +245,11 @@ export const GROUP_H_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.fillRect(xR - 150, yT - 14, 90, 28);
       drawLabel(ctx, `R₂=${R2}Ω`, xR - 105, yT + 4, '#fff', 'center');
 
-      // Animated current charges
+      drawLabel(ctx,'Chấm chỉ chiều dòng điện quy ước; dòng I bằng nhau trên toàn mạch nối tiếp.', xL, yB+32, '#cbd5e1');
+      // Direction markers; measured current is shown in amperes.
       const perim = 2 * (xR - xL + (yB - yT));
       for (let i = 0; i < 8; i++) {
-        const d = ((i / 8) * perim + t * I * 65) % perim;
+        const d = ((i / 8) * perim + t * Math.sign(I) * 65) % perim;
         let cx = xL;
         let cy = yT;
         const topW = xR - xL;

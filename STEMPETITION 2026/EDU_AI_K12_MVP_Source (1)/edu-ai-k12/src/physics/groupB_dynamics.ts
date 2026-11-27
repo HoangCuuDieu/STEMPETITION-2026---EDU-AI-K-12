@@ -47,7 +47,7 @@ export const GROUP_B_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Vận tốc v', value: v.toFixed(2), unit: 'm/s' },
           { label: 'Độ dịch chuyển x', value: x.toFixed(2), unit: 'm' },
         ],
-        graphSeries: { title: 'Đồ thị vận tốc v(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Đồ thị vận tốc v(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history },
       };
     },
   },
@@ -121,7 +121,7 @@ export const GROUP_B_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Phản lực N', value: N.toFixed(1), unit: 'N' },
           { label: 'Lực ma sát F_ms', value: fms.toFixed(1), unit: 'N' },
         ],
-        graphSeries: { title: 'Vận tốc dọc dốc v(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Vận tốc dọc dốc v(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history },
       };
     },
   },
@@ -178,7 +178,7 @@ export const GROUP_B_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'F_ms hiện tại', value: fFric.toFixed(1), unit: 'N' },
           { label: 'Gia tốc a', value: a.toFixed(2), unit: 'm/s²' },
         ],
-        graphSeries: { title: 'Độ lớn lực ma sát theo thời gian', xLabel: 't (s)', yLabel: 'F_ms (N)', points: history.slice(-150) },
+        graphSeries: { title: 'Độ lớn lực ma sát theo thời gian', xLabel: 't (s)', yLabel: 'F_ms (N)', points: history },
       };
     },
   },
@@ -246,7 +246,7 @@ export const GROUP_B_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Lực căng dây T', value: T.toFixed(1), unit: 'N' },
           { label: 'Chiều chuyển động', value: m2 > m1 ? 'm₂ xuống' : m1 > m2 ? 'm₁ xuống' : 'Cân bằng', unit: '' },
         ],
-        graphSeries: { title: 'Tốc độ hệ |v|(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Tốc độ hệ |v|(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history },
       };
     },
   },
@@ -312,7 +312,7 @@ export const GROUP_B_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Tỉ lệ chìm', value: (ratioSub * 100).toFixed(0), unit: '%' },
           { label: 'Trạng thái', value: rhoObj > rhoLiq ? 'Chìm' : rhoObj < rhoLiq ? 'Nổi' : 'Lơ lửng', unit: '' },
         ],
-        graphSeries: { title: 'Lực đẩy Archimedes cân bằng', xLabel: 't (s)', yLabel: 'F_A (N)', points: history.slice(-120) },
+        graphSeries: { title: 'Lực đẩy Archimedes cân bằng', xLabel: 't (s)', yLabel: 'F_A (N)', points: history },
       };
     },
   },

@@ -63,7 +63,7 @@ export const GROUP_C_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Thế năng W_t', value: Wt.toFixed(1), unit: 'J' },
           { label: 'Cơ năng W', value: W.toFixed(1), unit: 'J' },
         ],
-        graphSeries: { title: 'Động năng W_đ(t)', xLabel: 't (s)', yLabel: 'W_đ (J)', points: history.slice(-150) },
+        graphSeries: { title: 'Động năng W_đ(t)', xLabel: 't (s)', yLabel: 'W_đ (J)', points: history },
       };
     },
   },
@@ -119,7 +119,7 @@ export const GROUP_C_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Động năng', value: Wd.toFixed(2), unit: 'J' },
           { label: 'Cơ năng tổng', value: W.toFixed(2), unit: 'J' },
         ],
-        graphSeries: { title: 'Thế năng đàn hồi W_t(t)', xLabel: 't (s)', yLabel: 'W_t (J)', points: history.slice(-150) },
+        graphSeries: { title: 'Thế năng đàn hồi W_t(t)', xLabel: 't (s)', yLabel: 'W_t (J)', points: history },
       };
     },
   },
@@ -181,7 +181,7 @@ export const GROUP_C_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: "v₂' sau va chạm", value: v2p.toFixed(2), unit: 'm/s' },
           { label: 'Tổng động lượng', value: pTot.toFixed(2), unit: 'kg·m/s' },
         ],
-        graphSeries: { title: 'Tổng động lượng hệ p(t)', xLabel: 't (s)', yLabel: 'p (kg·m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Tổng động lượng hệ p(t)', xLabel: 't (s)', yLabel: 'p (kg·m/s)', points: history },
       };
     },
   },
@@ -233,7 +233,7 @@ export const GROUP_C_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: "Vận tốc chung v'", value: vp.toFixed(2), unit: 'm/s' },
           { label: 'Động năng mất đi', value: loss.toFixed(2), unit: 'J' },
         ],
-        graphSeries: { title: 'Vận tốc vật 1 v₁(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Vận tốc vật 1 v₁(t)', xLabel: 't (s)', yLabel: 'v (m/s)', points: history },
       };
     },
   },
@@ -282,7 +282,7 @@ export const GROUP_C_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Vận tốc giật lùi V', value: V.toFixed(2), unit: 'm/s' },
           { label: 'Động lượng tổng', value: (M * V + m * v).toFixed(3), unit: 'kg·m/s' },
         ],
-        graphSeries: { title: 'Vận tốc giật lùi V(t)', xLabel: 't (s)', yLabel: 'V (m/s)', points: history.slice(-150) },
+        graphSeries: { title: 'Vận tốc giật lùi V(t)', xLabel: 't (s)', yLabel: 'V (m/s)', points: history },
       };
     },
   },

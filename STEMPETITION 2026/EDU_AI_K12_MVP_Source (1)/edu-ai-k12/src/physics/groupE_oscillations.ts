@@ -50,7 +50,7 @@ export const GROUP_E_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Gia tốc a', value: a.toFixed(2), unit: 'm/s²' },
           { label: 'Chu kỳ T', value: T.toFixed(2), unit: 's' },
         ],
-        graphSeries: { title: 'Đồ thị li độ x(t)', xLabel: 't (s)', yLabel: 'x (cm)', points: history.slice(-160) },
+        graphSeries: { title: 'Đồ thị li độ x(t)', xLabel: 't (s)', yLabel: 'x (cm)', points: history },
       };
     },
   },
@@ -132,7 +132,7 @@ export const GROUP_E_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Vận tốc góc ω', value: omega.toFixed(2), unit: 'rad/s' },
           { label: isSmallAngle ? 'Chu kỳ T (góc nhỏ)' : 'T gần đúng (ngoài góc nhỏ)', value: Tsmall.toFixed(2), unit: 's' },
         ],
-        graphSeries: { title: 'Góc lệch θ(t)', xLabel: 't (s)', yLabel: 'θ (°)', points: history.slice(-160) },
+        graphSeries: { title: 'Góc lệch θ(t)', xLabel: 't (s)', yLabel: 'θ (°)', points: history },
       };
     },
   },
@@ -177,7 +177,7 @@ export const GROUP_E_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Li độ x(t)', value: x.toFixed(2), unit: 'cm' },
           { label: 'Biên độ tức thời', value: amp.toFixed(2), unit: 'cm' },
         ],
-        graphSeries: { title: 'Dao động tắt dần x(t)', xLabel: 't (s)', yLabel: 'x (cm)', points: history.slice(-160) },
+        graphSeries: { title: 'Dao động tắt dần x(t)', xLabel: 't (s)', yLabel: 'x (cm)', points: history },
       };
     },
   },
@@ -299,7 +299,7 @@ export const GROUP_E_SIMULATIONS: PhysicsSimulationSpec[] = [
           { label: 'Li độ x₂', value: x2.toFixed(2), unit: 'cm' },
           { label: 'Li độ tổng hợp x', value: xSum.toFixed(2), unit: 'cm' },
         ],
-        graphSeries: { title: 'Dao động tổng hợp x(t)', xLabel: 't (s)', yLabel: 'x (cm)', points: history.slice(-160) },
+        graphSeries: { title: 'Dao động tổng hợp x(t)', xLabel: 't (s)', yLabel: 'x (cm)', points: history },
       };
     },
   },
