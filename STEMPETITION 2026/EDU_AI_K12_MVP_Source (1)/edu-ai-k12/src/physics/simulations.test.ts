@@ -1,3 +1,4 @@
+import { observationTime, interferenceAt } from './experimentMath.ts';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { PHYSICS_CATALOG, PHYSICS_GROUPS } from './catalog.ts';
@@ -7,6 +8,8 @@ import type { PhysicsGroupId } from '../types/physics.ts';
 function createMockCanvas2DContext(): CanvasRenderingContext2D {
   const noop = () => {};
   return {
+    putImageData: noop,
+    createImageData: (width: number, height: number) => ({width, height, data: new Uint8ClampedArray(width*height*4)}),
     fillStyle: '#000',
     strokeStyle: '#000',
     lineWidth: 1,
@@ -106,6 +109,53 @@ describe('Physics Lab — 50 simulations verification', () => {
     }
 
     assert.equal(totalLoaded, 50);
+  });
+
+  it('ends Newton motion at the visible boundary and an inclined slide at the foot', () => {
+    const stop = observationTime('phys-06', {F: 24, m: 4}, 760);
+    assert.ok(Math.abs(54 + 3.5 * 3 * stop**2 - (760-185)) < 1e-8);
+    assert.equal(observationTime('phys-07', {alpha: 5, mu: 0.7}, 760), 0);
+    assert.ok(Math.abs(observationTime('phys-07', {alpha: 30, mu: 0}, 760) ** 2 * 2.45 - 14) < 1e-8);
+  });
+
+  it('preserves two-source symmetry and separates displacement from amplitude', () => {
+    for (const cycles of [0, 0.25, 2.5, 30]) {
+      const center = interferenceAt(0, 1, 3.5, 1, cycles);
+      assert.equal(center.amplitude, 2);
+      assert.ok(Math.abs(center.u) <= center.amplitude);
+      const node = interferenceAt(0.25, 0, 3.5, 1, cycles);
+      assert.ok(Math.abs(node.u) < 1e-10);
+    }
+  });
+
+  it('animates the orbit after 12 s and the pendulum after 25 s', async () => {
+    for (const [id, time] of [['phys-20', 14], ['phys-22', 26]] as const) {
+      const sim = await loadPhysicsSimulationById(id);
+      assert.ok(sim);
+      const ctx = createMockCanvas2DContext();
+      let position = '';
+      ctx.arc = (x, y) => { position = x + ',' + y; };
+      sim.stepAndRender(ctx, 760, 420, time, {}, []);
+      const previous = position;
+      sim.stepAndRender(ctx, 760, 420, time + 0.5, {}, []);
+      assert.notEqual(position, previous);
+    }
+  });
+
+  it('keeps the fixed end at equilibrium and moves the free end continuously', async () => {
+    const sim = await loadPhysicsSimulationById('phys-28');
+    assert.ok(sim);
+    const ctx = createMockCanvas2DContext();
+    let y = 0;
+    ctx.arc = (_x, currentY) => { y = currentY; };
+    const equilibrium = 420*0.55;
+    for (const offset of [0, 10, 20]) {
+      const time = (660-offset)/225;
+      sim.stepAndRender(ctx, 760, 420, time, {fixedEnd: 1, speed: 3}, []);
+      assert.equal(y, equilibrium);
+      sim.stepAndRender(ctx, 760, 420, time, {fixedEnd: 0, speed: 3}, []);
+      assert.ok(Math.abs(equilibrium-y-120*Math.exp(-(offset**2)/600)) < 1e-8);
+    }
   });
 
   it('loads individual simulation by id', async () => {

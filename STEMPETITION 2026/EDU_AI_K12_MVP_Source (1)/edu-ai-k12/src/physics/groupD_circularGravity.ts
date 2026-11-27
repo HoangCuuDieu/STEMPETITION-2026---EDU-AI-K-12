@@ -281,7 +281,7 @@ export const GROUP_D_SIMULATIONS: PhysicsSimulationSpec[] = [
       const r0 = 100;
       const vCirc = Math.sqrt(GM / r0);
       const dt = 0.08;
-      const steps = Math.min(800, Math.floor(t / 0.015));
+      const steps = Math.floor(t / dt);
 
       let x = r0;
       let y = 0;

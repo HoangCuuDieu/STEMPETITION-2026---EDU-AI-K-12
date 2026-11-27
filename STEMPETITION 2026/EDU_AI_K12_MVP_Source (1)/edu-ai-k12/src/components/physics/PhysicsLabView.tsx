@@ -1,3 +1,4 @@
+import { observationTime, interferenceAt } from '../../physics/experimentMath';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Maximize2,
@@ -93,10 +94,13 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   }, [selectedId]);
 
   const p=paramValues;
-  const endTime = selectedId==='phys-03'||selectedId==='phys-04' ? Math.sqrt(2*p.h0/p.g) :
-    selectedId==='phys-05' ? 2*p.v0*Math.sin(p.angle*Math.PI/180)/p.g : 30;
+  const endTime = observationTime(activeSim?.id, p, 760);
   const [probe,setProbe]=useState<{x:number;y:number;px:number;py:number}|null>(null);
   let probeText='';
+  if (probe && selectedId === 'phys-30' && probe.x >= 40 && probe.x < 720 && probe.y >= 20 && probe.y < 400) {
+    const sample = interferenceAt((probe.x - 380) / 46, (probe.y - 210) / 46, p.d, p.v / p.f, p.f * simTime);
+    probeText = `r₁ ${sample.r1.toFixed(2)} m · r₂ ${sample.r2.toFixed(2)} m · Δr ${(sample.r2-sample.r1).toFixed(2)} m · u ${sample.u.toFixed(2)} A · Biên độ ${sample.amplitude.toFixed(2)} A`;
+  }
   if(probe && selectedId==='phys-41'){
     const r=Math.hypot(probe.x-380,probe.y-210)/8;
     probeText=r<0.1?'Trên trục dây':('r = '+r.toFixed(2)+' cm · B = '+(20*Math.abs(p.I)/r).toFixed(2)+' μT');
@@ -253,6 +257,7 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
   const handleParamChange = (key: string, value: number) => {
     historyRef.current = [];
     simTimeRef.current=0;lastFrameRef.current=null;
+    setIsPlaying(Boolean(activeSim?.isTimeDependent));
     setParamValues((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -417,13 +422,13 @@ export function PhysicsLabView({ initialSimulationId }: PhysicsLabViewProps) {
             <div className="relative rounded-2xl overflow-hidden border-2 border-sky-950/20 bg-[#0c1322] shadow-md">
               <canvas
                 onPointerLeave={()=>setProbe(null)}
-                onPointerMove={e=>{if(selectedId!=='phys-41'&&selectedId!=='phys-26')return;const r=e.currentTarget.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;setProbe({x:px*760/r.width,y:py*420/r.height,px:Math.max(0,Math.min(px+10,r.width-170)),py:Math.max(0,py-35)})}}
+                onPointerMove={e=>{if(selectedId!=='phys-41'&&selectedId!=='phys-26'&&selectedId!=='phys-30')return;const r=e.currentTarget.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;setProbe({x:px*760/r.width,y:py*420/r.height,px:Math.max(0,Math.min(px+10,r.width-170)),py:Math.max(0,py-35)})}}
                 ref={canvasRef}
                 width={760}
                 height={420}
                 className="w-full h-auto block"
               />
-              {probe && probeText && <div className="pointer-events-none absolute rounded bg-slate-950/90 px-2 py-1 text-xs text-white" style={{left:probe.px,top:probe.py}}>{probeText}</div>}
+              {probe && probeText && <div className="pointer-events-none absolute max-w-40 rounded bg-slate-950/90 px-2 py-1 text-xs text-white" style={{left:probe.px,top:probe.py}}>{probeText}</div>}
               {activeSim?.isTimeDependent && (
                 <div className="absolute top-3 right-3 px-3 py-1 rounded-lg bg-slate-900/90 border border-sky-400/40 text-xs font-mono font-bold text-sky-300 tabular-nums shadow-sm">
                   t = {simTime.toFixed(2)} s

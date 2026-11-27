@@ -1,6 +1,35 @@
 import type { PhysicsSimulationSpec } from '../types/physics';
 import { drawArrow, drawLabel, drawStageBackground } from './canvasHelpers';
 
+// Cache spatial wave coefficients. Each frame only rotates the phase and looks up a colour.
+let cachedField: ReturnType<typeof buildField> | undefined;
+function buildField(ctx: CanvasRenderingContext2D, width: number, height: number, separation: number, wavelength: number) {
+  const image = ctx.createImageData(width, height);
+  const cosine = new Float32Array(width * height);
+  const sine = new Float32Array(width * height);
+  const k = 2 * Math.PI / wavelength;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const dx = x - width / 2;
+      const dy = y - height / 2;
+      const phase1 = k * Math.hypot(dx + separation / 2, dy);
+      const phase2 = k * Math.hypot(dx - separation / 2, dy);
+      const i = y * width + x;
+      cosine[i] = Math.cos(phase1) + Math.cos(phase2);
+      sine[i] = Math.sin(phase1) + Math.sin(phase2);
+    }
+  }
+  return { image, cosine, sine, separation, wavelength, pixels: new Uint32Array(image.data.buffer) };
+}
+
+const palette = Uint32Array.from({length: 513}, (_, i) => {
+  const u = (i - 256) / 256;
+  const strength = Math.abs(u);
+  const rgb = u < 0 ? [64, 172, 245] : [255, 177, 73];
+  const [r, g, b] = rgb.map((c, j) => Math.round([14,23,40][j] * (1-strength) + c*strength));
+  return (255 << 24) | (b << 16) | (g << 8) | r;
+});
+
 export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
   {
     id: 'phys-26',
@@ -141,18 +170,19 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
       drawStageBackground(ctx, w, h, ox, cy);
 
       const L = wallX - ox;
-      const travel = (t * speed * 75) % (2 * L);
+      const travel = t * speed * 75;
       const sign = fixed ? -1 : 1;
+      const displacement = (px: number) => {
+        const incident = px - ox - travel;
+        const reflected = px - wallX + travel - L;
+        return 60 * (Math.exp(-(incident ** 2) / 600) + sign * Math.exp(-(reflected ** 2) / 600));
+      };
 
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       for (let px = ox; px <= wallX; px += 3) {
-        const dIn = px - (ox + travel);
-        const dRef = px - (wallX - (travel - L));
-        const yIn = travel <= L ? 60 * Math.exp(-(dIn * dIn) / 600) : 0;
-        const yRef = travel > L ? sign * 60 * Math.exp(-(dRef * dRef) / 600) : 0;
-        const py = cy - (yIn + yRef);
+        const py = cy - displacement(px);
         if (px === ox) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
@@ -160,7 +190,7 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
 
       ctx.fillStyle = fixed ? '#f43f5e' : '#10b981';
       ctx.beginPath();
-      ctx.arc(wallX, fixed ? cy : cy - (travel > L - 25 && travel < L + 25 ? 50 : 0), 7, 0, Math.PI * 2);
+      ctx.arc(wallX, cy - displacement(wallX), 7, 0, Math.PI * 2);
       ctx.fill();
       drawLabel(ctx, fixed ? 'Đầu cố định (Ngược pha)' : 'Đầu tự do (Cùng pha)', wallX - 180, 40, '#e2e8f0');
 
@@ -187,7 +217,7 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
       { key: 'A', label: 'Biên độ bụng sóng', unit: 'cm', min: 1, max: 5, step: 0.5, defaultValue: 3 },
       { key: 'f', label: 'Tần số dao động f', unit: 'Hz', min: 0.5, max: 3, step: 0.25, defaultValue: 1.5 },
     ],
-    formulasLatex: ['L = k \\frac{\\lambda}{2}', 'u(x,t) = 2A\\sin\\left(\\frac{2\\pi x}{\\lambda}\\right)\\cos(2\\pi f t)'],
+    formulasLatex: ['L = k \\frac{\\lambda}{2}', 'u(x,t) = A\\sin\\left(\\frac{2\\pi x}{\\lambda}\\right)\\cos(2\\pi f t)'],
     explanationVi:
       'Sóng dừng hình thành từ sự giao thoa của sóng tới và sóng phản xạ trên dây hai đầu cố định, tạo nên các nút sóng đứng yên và các bụng sóng dao động với biên độ cực đại.',
     assumptionsAndLimits: ['Dây hai đầu cố định, thỏa điều kiện cộng hưởng L = n·(λ/2).'],
@@ -272,28 +302,29 @@ export const GROUP_F_SIMULATIONS: PhysicsSimulationSpec[] = [
       ctx.fillStyle = '#0b1120';
       ctx.fillRect(0, 0, w, h);
 
-      const cell = 8;
-      const phaseShift = 2 * Math.PI * f * t;
-      for (let px = 40; px < w - 40; px += cell) {
-        for (let py = 20; py < h - 20; py += cell) {
-          const r1 = Math.hypot(px - s1x, py - cy);
-          const r2 = Math.hypot(px - s2x, py - cy);
-          const u =
-            Math.cos((2 * Math.PI * r1) / lambdaPx - phaseShift) +
-            Math.cos((2 * Math.PI * r2) / lambdaPx - phaseShift);
-          const intensity = Math.max(0, Math.min(255, Math.round(128 + u * 62)));
-          ctx.fillStyle = `rgb(${Math.round(intensity * 0.15)}, ${Math.round(intensity * 0.65)}, ${intensity})`;
-          ctx.fillRect(px, py, cell, cell);
-        }
+      const width = w - 80;
+      const height = h - 40;
+      if (!cachedField || cachedField.image.width !== width || cachedField.image.height !== height ||
+          cachedField.separation !== dPx || cachedField.wavelength !== lambdaPx) {
+        cachedField = buildField(ctx, width, height, dPx, lambdaPx);
       }
+      const { image, cosine, sine, pixels } = cachedField;
+      const phase = 2 * Math.PI * f * t;
+      const c = 128 * Math.cos(phase);
+      const s = 128 * Math.sin(phase);
+      for (let i = 0; i < pixels.length; i++) {
+        pixels[i] = palette[256 + Math.round(cosine[i]*c + sine[i]*s)];
+      }
+      ctx.putImageData(image, 40, 20);
 
       ctx.fillStyle = '#facc15';
       ctx.beginPath();
       ctx.arc(s1x, cy, 6, 0, Math.PI * 2);
+      ctx.moveTo(s2x + 6, cy);
       ctx.arc(s2x, cy, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      const kMax = Math.floor(dLambda - 0.01);
+      const kMax = Math.ceil(dLambda - 1e-10) - 1;
       return {
         readings: [
           { label: 'Khoảng cách S₁S₂', value: dLambda.toFixed(1), unit: 'λ' },
