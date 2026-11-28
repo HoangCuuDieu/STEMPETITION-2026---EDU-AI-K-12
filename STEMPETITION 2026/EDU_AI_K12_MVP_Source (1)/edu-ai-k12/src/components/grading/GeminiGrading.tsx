@@ -93,9 +93,10 @@ export function GeminiGrading() {
         {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
       </form>
       <section aria-live="polite" className="min-w-0 rounded-2xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/60 p-5 shadow-sm sm:p-6">
-        <div className={report ? 'flex items-center gap-3' : 'flex min-h-48 flex-col items-center justify-center gap-3 text-center'}>
+        <div className={report ? 'flex items-center gap-3' : 'flex min-h-80 flex-col py-6 sm:min-h-96 items-center justify-center gap-3 text-center'}>
           <span className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 text-white"><ClipboardCheck aria-hidden="true" size={22}/></span>
           <h2 className="font-bold text-slate-950">Kết quả chấm bài</h2>
+          {!report && <img src="/assets/grading-checklist.png" width={300} height={255} alt="" className="w-60 max-w-full mix-blend-multiply [mask-image:radial-gradient(ellipse_closest-side,black_85%,transparent_125%)] sm:w-72"/>}
           {!report && <p className="text-sm text-slate-600">{busy ? 'Trợ lý đang đọc bài làm và chuẩn bị nhận xét.' : 'Nhận xét và điểm sẽ xuất hiện ở đây sau khi chấm.'}</p>}
         </div>
         {assessment && <AssessmentCard value={assessment} teacherRubric={teacherRubric}/>}
