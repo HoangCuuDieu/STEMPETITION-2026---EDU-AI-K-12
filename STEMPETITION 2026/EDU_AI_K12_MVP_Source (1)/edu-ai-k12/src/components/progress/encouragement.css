@@ -1,3 +1,5 @@
+.enc {font-family:Arial, system-ui, sans-serif}
+.enc h1,.enc h2,.enc button {font-family:inherit}
 .enc h1 {font-size:clamp(1.8rem,3vw,3rem);font-weight:800;line-height:1.12}
 .enc-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem}
 .enc-card,.enc-reader header {position:relative;isolation:isolate;overflow:hidden;color:var(--ink);background:var(--tint);border-radius:1.25rem}
@@ -7,7 +9,7 @@
 .enc-card .enc-copy {display:flex;flex-direction:column;align-items:flex-start;min-height:100%;width:64%;background:linear-gradient(90deg,var(--tint) 65%,transparent)}
 .enc h2 {font-size:clamp(1.25rem,1.75vw,1.8rem);line-height:1.16;font-weight:800}
 .enc-range {display:inline-block;border-radius:2rem;background:color-mix(in srgb,var(--edge) 17%,white);font-size:.83rem;font-weight:700;padding:.15rem .75rem;margin:.55rem 0}
-.enc blockquote,.enc-reader li {font-family:Georgia,'Times New Roman',serif;color:#182333}
+.enc blockquote,.enc-reader li {font-family:inherit;color:#182333}
 .enc blockquote {margin:.65rem 0 1rem;font-size:clamp(1.1rem,1.4vw,1.45rem);line-height:1.45}
 .enc blockquote::before {content:'“';color:var(--ink);font-weight:bold;margin-right:.2em}
 .enc button {display:inline-flex;align-items:center;gap:.45rem;font-weight:700;padding:.4rem 0;cursor:pointer}
