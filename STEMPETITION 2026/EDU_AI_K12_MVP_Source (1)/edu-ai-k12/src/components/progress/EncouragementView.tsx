@@ -1,23 +1,44 @@
+import { useRef, useState, type CSSProperties } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import groups from '../../data/encouragement.json';
+import './encouragement.css';
 
 const themes = [
-  ['from-violet-800 via-purple-600 to-fuchsia-700', 'from-violet-100 via-violet-50 text-violet-900'],
-  ['from-orange-800 via-orange-600 to-amber-700', 'from-orange-100 via-orange-50 text-orange-900'],
-  ['from-green-800 via-green-600 to-emerald-700', 'from-green-100 via-green-50 text-green-900'],
-  ['from-blue-800 via-blue-600 to-sky-700', 'from-blue-100 via-blue-50 text-blue-900'],
-];
+  ['#7325b4', '#f7efff', '#b642ff', 'mountain', 0],
+  ['#aa390b', '#fff3e4', '#ff8b29', 'plane', 1],
+  ['#12633c', '#eef9ee', '#48c580', 'leaf', 0],
+  ['#184d9e', '#edf6ff', '#4e98ff', 'tea', 3],
+] as const;
 
 export function EncouragementView() {
-  return <div className="grid gap-5 md:grid-cols-2">
-    {groups.map(({ title, quotes }, i) => (
-      <section key={title} className={'flex rounded-2xl bg-gradient-to-br p-[3px] shadow-sm ' + themes[i][0]}>
-        <div className={'w-full rounded-[13px] bg-gradient-to-br to-white p-5 sm:p-6 ' + themes[i][1]}>
-          <h2 className="mb-4 text-lg font-bold">{title}</h2>
-          <ol start={25*i+1} className="list-decimal pl-8 space-y-2 text-sm leading-6 text-slate-800">
-            {quotes.map(q => <li key={q}>{q}</li>)}
-          </ol>
-        </div>
-      </section>
-    ))}
-  </div>;
+  const [open, setOpen] = useState<number | null>(null);
+  const back = useRef<HTMLButtonElement>(null);
+  const links = useRef<(HTMLButtonElement | null)[]>([]);
+  function show(index: number | null) {
+    const previous = open;
+    setOpen(index);
+    requestAnimationFrame(() => {
+      const target = index === null ? links.current[previous ?? 0] : back.current;
+      target?.focus({preventScroll: true});
+      target?.scrollIntoView({block: 'center'});
+    });
+  }
+  const cards = groups.map(({title, quotes}, i) => {
+    if (open !== null && open !== i) return null;
+    const [ink, tint, edge, picture, featured] = themes[i];
+    const style = {'--ink':ink, '--tint':tint, '--edge':edge} as CSSProperties;
+    const name = title.replace(/\s*\(\d+\s*[–-]\s*\d+\)\s*$/, '');
+    const range = 'Câu ' + (25*i+1) + '–' + (25*i+quotes.length);
+    const art = <img className="enc-art" src={'/assets/encouragement/'+picture+'.webp'} alt=""/>;
+    return open === null ? <section className="enc-card" style={style} key={title}>
+      {art}<div className="enc-copy"><h2>{name}</h2><span className="enc-range">{range}</span>
+      <blockquote>{quotes[featured]}</blockquote>
+      <button ref={el=>{links.current[i]=el}} onClick={()=>show(i)} aria-label={'Xem 25 câu: '+name}>Xem 25 câu <ArrowRight size={18}/></button></div>
+    </section> : <article key={title} style={style} className="enc-reader">
+      <header>{art}<div className="enc-copy"><button ref={back} onClick={()=>show(null)}><ArrowLeft size={18}/> Tất cả chủ đề</button>
+      <h1>{name}</h1><span className="enc-range">{range}</span></div></header>
+      <ol start={25*i+1}>{quotes.map((quote,j)=><li key={quote}><span aria-hidden="true">{25*i+j+1}</span>{quote}</li>)}</ol>
+    </article>;
+  });
+  return <div className="enc">{open === null ? <><h1>Động viên khích lệ</h1><p className="mb-5 text-slate-600">100 câu · 4 chủ đề</p><div className="enc-grid">{cards}</div></> : cards}</div>;
 }

@@ -1,0 +1,23 @@
+.enc h1 {font-size:clamp(1.8rem,3vw,3rem);font-weight:800;line-height:1.12}
+.enc-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem}
+.enc-card,.enc-reader header {position:relative;isolation:isolate;overflow:hidden;color:var(--ink);background:var(--tint);border-radius:1.25rem}
+.enc-card {border:2px solid transparent;background:linear-gradient(var(--tint),var(--tint)) padding-box,linear-gradient(120deg,var(--ink),var(--edge)) border-box}
+.enc-art {position:absolute;inset:0 0 0 auto;width:63%;height:100%;object-fit:cover;object-position:65% center;mask-image:linear-gradient(90deg,transparent,black 45%);z-index:-1}
+.enc-copy {padding:clamp(1.1rem,2vw,2rem);position:relative}
+.enc-card .enc-copy {display:flex;flex-direction:column;align-items:flex-start;min-height:100%;width:64%;background:linear-gradient(90deg,var(--tint) 65%,transparent)}
+.enc h2 {font-size:clamp(1.25rem,1.75vw,1.8rem);line-height:1.16;font-weight:800}
+.enc-range {display:inline-block;border-radius:2rem;background:color-mix(in srgb,var(--edge) 17%,white);font-size:.83rem;font-weight:700;padding:.15rem .75rem;margin:.55rem 0}
+.enc blockquote,.enc-reader li {font-family:Georgia,'Times New Roman',serif;color:#182333}
+.enc blockquote {margin:.65rem 0 1rem;font-size:clamp(1.1rem,1.4vw,1.45rem);line-height:1.45}
+.enc blockquote::before {content:'“';color:var(--ink);font-weight:bold;margin-right:.2em}
+.enc button {display:inline-flex;align-items:center;gap:.45rem;font-weight:700;padding:.4rem 0;cursor:pointer}
+.enc button:hover {text-decoration:underline}
+.enc-card button {margin-top:auto}
+.enc-reader header {min-height:12rem}
+.enc-reader header .enc-copy {max-width:62%}
+.enc-reader h1 {margin:.8rem 0}
+.enc-reader ol {margin-top:1rem;padding:.4rem clamp(.8rem,3vw,3rem);background:white;border:1px solid var(--edge);border-radius:1.25rem}
+.enc-reader li {display:flex;align-items:baseline;gap:1rem;padding:1.15rem 0;font-size:clamp(1.1rem,1.65vw,1.55rem);line-height:1.5}
+.enc-reader li+li {border-top:1px solid color-mix(in srgb,var(--edge) 32%,white)}
+.enc-reader li span {color:var(--ink);font-weight:bold;font-style:italic;border-right:2px solid var(--edge);min-width:3em}
+@media(max-width:720px){.enc-grid{grid-template-columns:1fr}.enc-card .enc-copy,.enc-reader header .enc-copy{width:72%;max-width:85%}}

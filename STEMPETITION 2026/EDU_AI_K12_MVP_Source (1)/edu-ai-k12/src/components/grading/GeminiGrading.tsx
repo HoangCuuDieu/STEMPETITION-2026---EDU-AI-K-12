@@ -13,8 +13,8 @@ async function upload(file: File) {
 
 function GradingHeading({result = false}: {result?: boolean}) {
   const Icon = result ? ClipboardCheck : FileText;
-  return <h2 className={'relative isolate -mx-5 -mt-5 flex items-center gap-3 overflow-hidden rounded-t-2xl px-5 py-4 text-xl font-bold text-slate-950 sm:-mx-6 sm:-mt-6 sm:px-6 ' + (result ? 'bg-orange-50' : 'bg-violet-50')}>
-    <svg aria-hidden="true" viewBox="0 0 100 50" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 -z-10 size-full">
+  return <h2 className={'relative isolate -mx-5 -mt-5 flex items-center gap-3 overflow-hidden rounded-t-2xl px-5 py-4 text-xl font-bold text-slate-950 sm:-mx-6 sm:-mt-6 sm:px-6 ' + (result ? 'bg-gradient-to-b from-orange-50 to-transparent' : 'bg-gradient-to-b from-violet-50 to-transparent')}>
+    <svg aria-hidden="true" viewBox="0 0 100 50" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 -z-10 size-full [mask-image:linear-gradient(to_bottom,black_10%,rgba(0,0,0,.65)_55%,transparent)]">
       <path fill={result ? '#ffdfc5' : '#e8dcff'} d={result ? 'M0 12 C25 -2 58 50 100 44 V50 H0Z' : 'M0 47 C50 48 65 32 100 12 V50 H0Z'}/>
     </svg>
     <span className={'grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white ' + (result ? 'from-amber-500 to-rose-500' : 'from-violet-500 to-indigo-600')}><Icon size={21} aria-hidden="true"/></span>
