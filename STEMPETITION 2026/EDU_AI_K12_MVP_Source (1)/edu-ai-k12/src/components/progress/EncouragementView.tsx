@@ -4,10 +4,10 @@ import groups from '../../data/encouragement.json';
 import './encouragement.css';
 
 const themes = [
-  ['#7325b4', '#f7efff', '#b642ff', 'mountain', 0],
-  ['#aa390b', '#fff3e4', '#ff8b29', 'plane', 1],
-  ['#12633c', '#eef9ee', '#48c580', 'leaf', 0],
-  ['#184d9e', '#edf6ff', '#4e98ff', 'tea', 3],
+  ['#7325b4', '#f7efff', '#b642ff', '/assets/illustrations/mountain-7a6f0d3e6d73.webp', 0],
+  ['#aa390b', '#fff3e4', '#ff8b29', '/assets/illustrations/plane-517da825eccc.webp', 1],
+  ['#12633c', '#eef9ee', '#48c580', '/assets/illustrations/leaf-dabed6705f46.webp', 0],
+  ['#184d9e', '#edf6ff', '#4e98ff', '/assets/illustrations/tea-38c6962d2073.webp', 3],
 ] as const;
 
 export function EncouragementView() {
@@ -29,7 +29,7 @@ export function EncouragementView() {
     const style = {'--ink':ink, '--tint':tint, '--edge':edge} as CSSProperties;
     const name = title.replace(/\s*\(\d+\s*[–-]\s*\d+\)\s*$/, '');
     const range = 'Câu ' + (25*i+1) + '–' + (25*i+quotes.length);
-    const art = <img className="enc-art" src={'/assets/encouragement/'+picture+'.webp'} alt=""/>;
+    const art = <img className="enc-art" src={picture} alt=""/>;
     return open === null ? <section className="enc-card" style={style} key={title}>
       {art}<div className="enc-copy"><h2>{name}</h2><span className="enc-range">{range}</span>
       <blockquote>{quotes[featured]}</blockquote>

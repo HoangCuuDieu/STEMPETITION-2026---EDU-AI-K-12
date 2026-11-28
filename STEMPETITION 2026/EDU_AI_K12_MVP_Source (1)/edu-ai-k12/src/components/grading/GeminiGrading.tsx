@@ -103,7 +103,7 @@ export function GeminiGrading() {
       <section aria-live="polite" className="min-w-0 rounded-2xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/60 p-5 shadow-sm sm:p-6">
         <GradingHeading result/>
         <div className={report ? undefined : "flex min-h-80 flex-col items-center justify-center gap-3 py-6 text-center"}>
-          {!report && <img src="/assets/grading-checklist.png" width={300} height={255} alt="" className="w-60 max-w-full mix-blend-multiply [mask-image:radial-gradient(ellipse_closest-side,black_85%,transparent_125%)] sm:w-72"/>}
+          {!report && <img src="/assets/illustrations/grading-checklist-9b34fb851cf5.webp" width={300} height={255} alt="" className="w-60 max-w-full mix-blend-multiply [mask-image:radial-gradient(ellipse_closest-side,black_85%,transparent_125%)] sm:w-72"/>}
           {!report && <p className="text-sm text-slate-600">{busy ? 'Trợ lý đang đọc bài làm và chuẩn bị nhận xét.' : 'Nhận xét và điểm sẽ xuất hiện ở đây sau khi chấm.'}</p>}
         </div>
         {assessment && <AssessmentCard value={assessment} teacherRubric={teacherRubric}/>}
